@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Strata · the 3D map of your information systems</title>
+<meta name="description" content="Strata is a self-hosted 3D map of your information systems: zones, VLANs, assets, flows, exposure, vulnerabilities and who to call. Fed by Cyberwatch, GLPI, phpIPAM and Palo Alto. Free software, AGPL-3.0.">
+<meta name="theme-color" content="#5e7d6c">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="Strata · the 3D map of your information systems">
+<meta property="og:description" content="Zones, VLANs, assets, flows, exposure and vulnerabilities, in layers. Self-hosted, AGPL-3.0.">
+<meta property="og:image" content="https://solidgeeks.github.io/strata/assets/img/og.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preload" href="assets/fonts/archivo-var.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="assets/css/site.css">
+<script>try{var t=localStorage.getItem('strata-site-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body class="home">
+<a class="skip" href="#install">Skip to the install steps</a>
+
+<header class="top" id="top">
+  <a class="mark" href="./" aria-label="Strata, home">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><polygon points="16,19 27,23.5 16,28 5,23.5" fill="var(--s1)"/><polygon points="16,12.5 27,17 16,21.5 5,17" fill="var(--s3)"/><polygon points="16,6 27,10.5 16,15 5,10.5" fill="var(--s2)"/></svg>
+    <span>Strata</span>
+  </a>
+  <nav aria-label="Main">
+    <a href="#install">Install</a>
+    <a href="#inside">Features</a>
+    <a href="docs.html">Documentation</a>
+    <a href="https://github.com/SolidGeeks/strata">GitHub</a>
+  </nav>
+  <div class="theme" role="group" aria-label="Page theme">
+    <button data-theme-set="auto" aria-pressed="true">Auto</button><button data-theme-set="light" aria-pressed="false">Day</button><button data-theme-set="dark" aria-pressed="false">Night</button>
+  </div>
+</header>
+
+<main>
+<!-- The film is the hero: the product, in 48 seconds -->
+<section class="reel" id="reel" aria-labelledby="hero-h">
+  <div class="screen">
+    <video id="film" autoplay muted loop playsinline preload="auto" poster="assets/img/poster-start.jpg" aria-label="Strata in 48 seconds: an information system built up in layers, its flows, exposure, 2D diagram, proposals, connectors and night theme">
+      <source src="film/strata-web.mp4" type="video/mp4">
+    </video>
+    <button class="btn small sound" id="playBtn" type="button">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8h3l4-4v12l-4-4H3z" fill="currentColor"/><path d="M13 7.5a3.5 3.5 0 010 5M15 5.5a6.5 6.5 0 010 9" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+      Watch with sound · 48 s
+    </button>
+  </div>
+  <nav class="chapters" id="chapters" aria-label="Film chapters"><ol></ol><span class="playhead" aria-hidden="true"></span></nav>
+  <div class="wrap hero-txt">
+    <h1 id="hero-h" class="strata-type"><span class="w">Your network,</span><span class="n">in layers.</span></h1>
+    <div>
+      <p class="lede">Strata is a self-hosted 3D map of your information systems. Zones, VLANs, assets and flows stack up in layers, with what is exposed, what is vulnerable and who to call.</p>
+      <div class="ctas">
+        <a class="btn solid" href="#install">Install with Docker</a>
+        <a class="btn" href="https://github.com/SolidGeeks/strata">Source on GitHub</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band install" id="install" aria-labelledby="install-h">
+  <div class="wrap">
+    <h2 id="install-h" class="strata-type"><span class="w">Running in</span><span class="n">three commands.</span></h2>
+    <p class="sub">Docker on any Linux host, or a Mac for a trial. Your map stays on your network: no account, no telemetry, no external call except to the tools you connect.</p>
+    <ol class="steps">
+      <li>
+        <h3>Get the code</h3>
+        <div class="code"><pre><code>git clone https://github.com/SolidGeeks/strata.git
+cd strata</code></pre><button class="copy" type="button">Copy</button></div>
+      </li>
+      <li>
+        <h3>Set the first admin password</h3>
+        <div class="code"><pre><code>cp .env.example .env
+nano .env    # EDIT_PASS=a-long-passphrase</code></pre><button class="copy" type="button">Copy</button></div>
+      </li>
+      <li>
+        <h3>Start it</h3>
+        <div class="code"><pre><code>docker compose up -d --build</code></pre><button class="copy" type="button">Copy</button></div>
+        <p>Open <code>http://localhost:8080</code>, sign in, then <em>Load demo</em> to explore five sample sites. Releases also publish a ready-made image, <code>ghcr.io/solidgeeks/strata</code>: <code>docker compose pull &amp;&amp; docker compose up -d</code>.</p>
+      </li>
+    </ol>
+    <p class="more"><a href="docs.html#install">HTTPS, systemd install, backups and upgrades are in the documentation.</a></p>
+  </div>
+</section>
+
+<section class="band inside" id="inside" aria-labelledby="inside-h">
+  <div class="wrap">
+    <h2 id="inside-h" class="strata-type"><span class="w">What you get,</span><span class="n">layer by layer.</span></h2>
+  </div>
+
+  <article class="layer" style="--edge:var(--s7)">
+    <div class="txt">
+      <h3>A model you can walk around, and a diagram you can draw</h3>
+      <p>Each information system is a stack of plates: one per zone, one colour per VLAN, an object per asset. Orbit, zoom, filter by severity or exposure. Switch to the 2D diagram to add assets, draw flows and arrange plates; both views share the same positions, so what you draw flat is what you see in 3D.</p>
+      <ul class="facts"><li>Flows routed through the firewalls, routers and switches they cross</li><li>Plates movable anywhere on their level</li><li>Five sites in the demo, linked by WAN</li></ul>
+    </div>
+    <figure class="shot"><img src="assets/img/diagram-1200.webp" srcset="assets/img/diagram-1200.webp 1200w, assets/img/diagram.webp 2400w" sizes="(min-width: 1000px) 60vw, 100vw" width="2400" height="1500" alt="The 2D diagram of the Lyon site: four levels of VLAN plates with asset cards and flows" loading="lazy"><figcaption>2D diagram of the demo’s Lyon site.</figcaption></figure>
+  </article>
+
+  <article class="layer" style="--edge:var(--s9)">
+    <div class="txt">
+      <h3>What is exposed, and who to call about it</h3>
+      <p>Every port is classed by where its traffic comes from: the Internet, another VLAN, or the same VLAN. “Reachable from the Internet” lights the path hop by hop. Click an asset for its system, applications, vulnerabilities, exposed ports and the incident contacts to call, with a copy button for each number.</p>
+      <ul class="facts"><li>Internet services as endpoints: ESET updates, Ubuntu mirrors, Microsoft 365…</li><li>Severity pins from your scanner</li></ul>
+    </div>
+    <figure class="shot"><img src="assets/img/site-day-1200.webp" srcset="assets/img/site-day-1200.webp 1200w, assets/img/site-day.webp 2400w" sizes="(min-width: 1000px) 60vw, 100vw" width="2400" height="1500" alt="The 3D model zoomed on the ERP server, with its asset sheet: applications, vulnerabilities and incident contacts" loading="lazy"><figcaption>The ERP server and its sheet: Log4j inside, two contacts to call.</figcaption></figure>
+  </article>
+
+  <article class="layer" style="--edge:var(--s2)">
+    <div class="txt">
+      <h3>Documents that write themselves</h3>
+      <p>Pick an asset and get its architecture plan: every path to the Internet, every device crossed, ready for a PNG or SVG in your documentation. Export its flow matrix and the firewall rules it needs as CSV.</p>
+      <ul class="facts"><li>Plans stay light, whatever the theme</li><li>Whole map or one site as JSON</li></ul>
+    </div>
+    <figure class="shot"><img src="assets/img/plan-1200.webp" srcset="assets/img/plan-1200.webp 1200w, assets/img/plan.webp 2400w" sizes="(min-width: 1000px) 60vw, 100vw" width="2400" height="1500" alt="Architecture plan of the ERP server: Internet, Ubuntu repositories, the DMZ and the core IT zone with the devices crossed" loading="lazy"><figcaption>Architecture plan generated for app-erp.</figcaption></figure>
+  </article>
+
+  <article class="layer" style="--edge:var(--s3)">
+    <div class="txt">
+      <h3>Changes are proposed, reviewed, then published</h3>
+      <p>Contributors edit in a draft, or submit a JSON file. Approvers see the changes on the map itself, green for added and amber for modified, comment, then approve or reject. Nobody approves their own work. Every change is a version you can view or roll back to.</p>
+      <table class="roles">
+        <caption>Roles</caption>
+        <thead><tr><th scope="col">Role</th><th scope="col">Can</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">viewer</th><td>read the map, sheets, plans and history</td></tr>
+          <tr><th scope="row">contributor</th><td>also prepare and submit proposals</td></tr>
+          <tr><th scope="row">approver</th><td>also edit directly, review proposals, restore versions, run connectors</td></tr>
+          <tr><th scope="row">admin</th><td>also manage accounts and connector settings</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <figure class="shot"><img src="assets/img/proposal-1200.webp" srcset="assets/img/proposal-1200.webp 1200w, assets/img/proposal.webp 2400w" sizes="(min-width: 1000px) 60vw, 100vw" width="2400" height="1500" alt="A proposal under review: the mode bar, the list of 22 changes and the rules that could not be drawn" loading="lazy"><figcaption>A proposal prepared from a Palo Alto configuration, under review.</figcaption></figure>
+  </article>
+
+  <article class="layer wide" style="--edge:var(--s6)">
+    <div class="txt">
+      <h3>Fed by the tools you already run</h3>
+      <p>Connectors read your tools on demand or on a schedule. Nothing lands on the map directly: each sync prepares one proposal per site, refreshed in place until someone reviews it. Credentials stay on the server.</p>
+    </div>
+    <div class="tools">
+      <table>
+        <thead><tr><th scope="col">Tool</th><th scope="col">Strata reads</th><th scope="col">and proposes</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Cyberwatch</th><td>servers and their CVEs (API v3)</td><td>vulnerabilities on matching assets, by host name then IP; hand-entered findings kept</td></tr>
+          <tr><th scope="row">GLPI</th><td>computers, network devices, printers, phones, software, technician and group, location</td><td>new and updated assets, applications, incident contacts; the location picks the site</td></tr>
+          <tr><th scope="row">phpIPAM</th><td>sections, subnets, VLANs, addresses</td><td>VLANs with their ranges, asset addresses, assets moved to their subnet’s VLAN</td></tr>
+          <tr><th scope="row">Palo Alto</th><td>a configuration file, or the XML API of a firewall or Panorama</td><td>flows from every active allow rule, address objects matched to assets, public objects as Internet services</td></tr>
+        </tbody>
+      </table>
+      <figure class="shot"><img src="assets/img/connectors-1200.webp" srcset="assets/img/connectors-1200.webp 1200w, assets/img/connectors.webp 2400w" sizes="(min-width: 1000px) 40vw, 100vw" width="2400" height="1500" alt="The Connectors panel: Cyberwatch and GLPI scheduled, their last runs and the proposals they prepared" loading="lazy"><figcaption>Connectors panel after a sync.</figcaption></figure>
+    </div>
+  </article>
+
+  <article class="layer wide" style="--edge:var(--s4)">
+    <div class="txt">
+      <h3>Day shift, night shift</h3>
+      <p>Follows your system’s theme, or force it with <kbd>N</kbd>. Drag the line to compare.</p>
+    </div>
+    <div class="compare" id="compare" style="--cut:50%">
+      <img src="assets/img/wide-day-1200.webp" srcset="assets/img/wide-day-1200.webp 1200w, assets/img/wide-day.webp 2400w" sizes="(min-width: 1000px) 80vw, 100vw" width="2400" height="1500" alt="The Lyon site in day theme" loading="lazy">
+      <img class="after" src="assets/img/wide-night-1200.webp" srcset="assets/img/wide-night-1200.webp 1200w, assets/img/wide-night.webp 2400w" sizes="(min-width: 1000px) 80vw, 100vw" width="2400" height="1500" alt="The same view in night theme" loading="lazy">
+      <input type="range" min="0" max="100" value="50" aria-label="Day and night comparison: position of the dividing line">
+      <span class="handle" aria-hidden="true"></span>
+    </div>
+  </article>
+</section>
+
+<section class="band own" aria-labelledby="own-h">
+  <div class="wrap">
+    <h2 id="own-h" class="strata-type"><span class="w">Your map stays</span><span class="n">on your network.</span></h2>
+    <div class="cols">
+      <div><h3>Small to run</h3><p>One Node.js process with no dependencies, one JSON file for data, automatic backups. It runs on a 1 GB VM and works offline once built.</p></div>
+      <div><h3>Careful with secrets</h3><p>Named accounts with hashed passwords, strict security headers, connector credentials kept server-side with file mode 600, never sent to browsers.</p></div>
+      <div><h3>Free software</h3><p>Released under the GNU AGPL v3: use it, change it, share it. If you offer a modified version over a network, offer its source too.</p></div>
+    </div>
+    <div class="ctas">
+      <a class="btn solid" href="docs.html">Read the documentation</a>
+      <a class="btn" href="https://github.com/SolidGeeks/strata/releases">Releases and changelog</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p>Strata 0.5.2 · <a href="https://github.com/SolidGeeks/strata/blob/main/LICENSE">AGPL-3.0</a> · <a href="https://github.com/SolidGeeks/strata">github.com/SolidGeeks/strata</a></p>
+    <p>Formerly IS Map 3D. Cyberwatch, GLPI, phpIPAM and Palo Alto Networks are trademarks of their owners; Strata is not affiliated with them.</p>
+  </div>
+</footer>
+
+<div class="player" id="player" hidden role="dialog" aria-modal="true" aria-label="Strata film with sound">
+  <video id="playerVideo" controls playsinline preload="none" poster="assets/img/poster-start.jpg">
+    <source src="film/strata-web.mp4" type="video/mp4">
+  </video>
+  <button type="button" class="btn small" id="pClose">Close</button>
+</div>
+
+<script src="assets/js/site.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Documentation · Strata</title>
+<meta name="description" content="Install, configure and run Strata: Docker, HTTPS, accounts and roles, proposals and history, Internet services, connectors (Cyberwatch, GLPI, phpIPAM, Palo Alto), backups, API.">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:image" content="https://solidgeeks.github.io/strata/assets/img/og.jpg">
+<link rel="preload" href="assets/fonts/archivo-var.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="assets/css/site.css">
+<script>try{var t=localStorage.getItem('strata-site-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body class="docs-page">
+<a class="skip" href="#content">Skip to the documentation</a>
+<header class="top">
+  <a class="mark" href="./" aria-label="Strata, home">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><polygon points="16,19 27,23.5 16,28 5,23.5" fill="var(--s1)"/><polygon points="16,12.5 27,17 16,21.5 5,17" fill="var(--s3)"/><polygon points="16,6 27,10.5 16,15 5,10.5" fill="var(--s2)"/></svg>
+    <span>Strata</span>
+  </a>
+  <nav aria-label="Main">
+    <a href="./#install">Install</a>
+    <a href="./#inside">Features</a>
+    <a href="docs.html" aria-current="page">Documentation</a>
+    <a href="https://github.com/SolidGeeks/strata">GitHub</a>
+  </nav>
+  <div class="theme" role="group" aria-label="Page theme">
+    <button data-theme-set="auto" aria-pressed="true">Auto</button><button data-theme-set="light" aria-pressed="false">Day</button><button data-theme-set="dark" aria-pressed="false">Night</button>
+  </div>
+</header>
+
+<div class="doc">
+  <nav class="toc" aria-label="On this page">
+    <ol>
+      <li><a href="#install">Install with Docker</a></li>
+      <li><a href="#config">Configuration</a></li>
+      <li><a href="#https">HTTPS and network</a></li>
+      <li><a href="#systemd">Without Docker</a></li>
+      <li><a href="#accounts">Accounts and roles</a></li>
+      <li><a href="#map">Building the map</a></li>
+      <li><a href="#proposals">Proposals and history</a></li>
+      <li><a href="#services">Internet services</a></li>
+      <li><a href="#connectors">Connectors</a></li>
+      <li><a href="#exports">Plans and exports</a></li>
+      <li><a href="#backups">Backups</a></li>
+      <li><a href="#upgrade">Upgrading</a></li>
+      <li><a href="#api">API</a></li>
+      <li><a href="#security">Security and licence</a></li>
+      <li><a href="#troubleshooting">Troubleshooting</a></li>
+      <li><a href="#limits">Known limits</a></li>
+    </ol>
+  </nav>
+
+  <article id="content">
+    <h1 class="strata-type"><span class="w">Documentation</span><span class="n">for Strata 0.5.</span></h1>
+    <p>Strata maps your information systems in 3D: each site is a stack of plates (zones), coloured by VLAN, holding its assets, the flows between them, what they expose, their vulnerabilities and the people to call. It runs on your own server.</p>
+
+    <h2 id="install" style="--edge:var(--s7)">Install with Docker</h2>
+    <p>You need Docker with the Compose plugin, about 1 GB of RAM and 1 GB of disk. To build the image yourself, the host also needs access to the npm registry during the build.</p>
+    <div class="code"><pre><code>git clone https://github.com/SolidGeeks/strata.git
+cd strata
+cp .env.example .env
+nano .env                         # set EDIT_PASS
+docker compose up -d --build      # builds the image here</code></pre><button class="copy" type="button">Copy</button></div>
+    <p>On Windows: <code>copy .env.example .env</code> then <code>notepad .env</code>.</p>
+    <p>Once a release is published, <code>docker compose pull &amp;&amp; docker compose up -d</code> fetches the ready-made image <code>ghcr.io/solidgeeks/strata</code> instead of building it. Before the first release, <code>pull</code> answers <code>denied</code>: the image does not exist yet.</p>
+    <p>Open <code>http://localhost:8080</code> and sign in with <code>EDIT_USER</code> / <code>EDIT_PASS</code>. The map starts empty: <em>Load demo (5 IS)</em> fills it with five sample sites, <em>Delete everything</em> clears it.</p>
+    <div class="code"><pre><code>docker compose logs -f strata     # logs
+docker compose restart strata     # restart
+docker compose down               # stop (data stays in the volume)</code></pre><button class="copy" type="button">Copy</button></div>
+    <p>By default the port only listens on the machine itself (<code>127.0.0.1:8080</code>). See <a href="#https">HTTPS and network</a> to open it to your users.</p>
+
+    <h2 id="config" style="--edge:var(--s2)">Configuration</h2>
+    <p>Settings live in <code>.env</code>. Apply a change with <code>docker compose up -d</code>.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th scope="col">Variable</th><th scope="col">Default</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>EDIT_USER</code> / <code>EDIT_PASS</code></td><td><code>admin</code> / empty</td><td>First admin account, created or reset at every start. <strong>With no <code>EDIT_PASS</code> and no account in <code>data/users.json</code>, there is no authentication at all.</strong></td></tr>
+        <tr><td><code>VIEW_USER</code> / <code>VIEW_PASS</code></td><td><code>viewer</code> / empty</td><td>Optional shared read-only account.</td></tr>
+        <tr><td><code>ALLOW_SELF_APPROVAL</code></td><td><code>false</code></td><td><code>true</code> lets an approver approve their own proposals.</td></tr>
+        <tr><td><code>HISTORY_KEEP</code></td><td><code>5000</code></td><td>How many document changes the history keeps.</td></tr>
+        <tr><td><code>READ_ONLY</code></td><td><code>false</code></td><td>Freezes the map for everyone (an audit, a migration).</td></tr>
+        <tr><td><code>BACKUP_KEEP</code> / <code>BACKUP_EVERY_HOURS</code></td><td><code>14</code> / <code>24</code></td><td>Automatic backups: how many to keep, how often.</td></tr>
+        <tr><td><code>MAX_IMPORT_MB</code></td><td><code>20</code></td><td>Largest JSON or firewall configuration file accepted.</td></tr>
+        <tr><td><code>CONNECTORS</code></td><td><code>true</code></td><td><code>false</code> turns the connectors off entirely.</td></tr>
+        <tr><td><code>SOURCE_URL</code></td><td>this repository</td><td>The <em>Source code</em> link in the app. Point it at your fork if you modify Strata (AGPL, section 13).</td></tr>
+        <tr><td><code>DATA_VOLUME</code></td><td><code>strata-data</code></td><td>Docker volume holding the data. Set it to an older volume name to keep its data (see <a href="#upgrade">Upgrading</a>).</td></tr>
+        <tr><td><code>PORT</code> / <code>HOST</code></td><td><code>8080</code> / <code>0.0.0.0</code></td><td>Where the server listens.</td></tr>
+        <tr><td><code>DATA_DIR</code></td><td><code>/data</code> in Docker</td><td>Data and backups folder.</td></tr>
+        <tr><td><code>SITE_ADDRESS</code></td><td>none</td><td>DNS name used by the bundled HTTPS proxy.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2 id="https" style="--edge:var(--s3)">HTTPS and network</h2>
+    <p class="note warn">Passwords travel as HTTP Basic credentials. Never expose Strata over plain HTTP beyond the machine it runs on.</p>
+    <h3>Bundled proxy (Caddy)</h3>
+    <ol class="list">
+      <li>In <code>.env</code>, set <code>SITE_ADDRESS=strata.example.lan</code>, the name your users will type.</li>
+      <li>Point that name at the host (internal DNS or hosts file).</li>
+      <li>Start with the HTTPS profile:</li>
+    </ol>
+    <div class="code"><pre><code>docker compose --profile https up -d</code></pre><button class="copy" type="button">Copy</button></div>
+    <p>The Caddyfile uses <code>tls internal</code>: Caddy signs the certificate with its own local authority, which suits an internal network or a VPN. Install that authority on your workstations to remove the browser warning:</p>
+    <div class="code"><pre><code>docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt ./caddy-root.crt</code></pre><button class="copy" type="button">Copy</button></div>
+    <p>For a public name reachable on ports 80 and 443, delete the <code>tls internal</code> line and Caddy gets a Let’s Encrypt certificate itself.</p>
+    <h3>Your own reverse proxy</h3>
+    <p>Proxy to <code>http://127.0.0.1:8080</code>. Live updates use Server-Sent Events on <code>/api/events</code>, so turn buffering off on that path. With nginx:</p>
+    <div class="code"><pre><code>location / {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_set_header Host $host;
+}
+location /api/events {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_buffering off;
+    proxy_read_timeout 1h;
+}</code></pre><button class="copy" type="button">Copy</button></div>
+    <p>Strata also works under a sub-path (<code>https://intranet/strata/</code>): it only uses relative URLs.</p>
+
+    <h2 id="systemd" style="--edge:var(--s5)">Without Docker (systemd)</h2>
+    <p>Node.js 20 or later. The server has no npm dependency at run time; <code>npm run setup</code> only copies three.js and the fonts into <code>public/vendor</code>.</p>
+    <div class="code"><pre><code>sudo mkdir -p /opt/strata &amp;&amp; sudo cp -r strata/* /opt/strata/
+cd /opt/strata
+sudo npm run setup
+sudo useradd --system --home /opt/strata --shell /usr/sbin/nologin strata
+sudo mkdir -p /var/lib/strata &amp;&amp; sudo chown strata:strata /var/lib/strata
+sudo cp .env.example /etc/strata.env &amp;&amp; sudo chmod 600 /etc/strata.env
+sudo cp deploy/strata.service /etc/systemd/system/
+sudo systemctl daemon-reload &amp;&amp; sudo systemctl enable --now strata</code></pre><button class="copy" type="button">Copy</button></div>
+    <p>The service listens on <code>127.0.0.1:8080</code>: put an HTTPS reverse proxy in front. For a quick try on a workstation: <code>npm run setup &amp;&amp; EDIT_PASS=test npm start</code>.</p>
+
+    <h2 id="accounts" style="--edge:var(--s4)">Accounts and roles</h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th scope="col">Role</th><th scope="col">Can</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">viewer</th><td>read the map, sheets, plans and history</td></tr>
+        <tr><th scope="row">contributor</th><td>also prepare proposals (drafts) and submit them; import a firewall configuration file as a proposal</td></tr>
+        <tr><th scope="row">approver</th><td>also edit the map directly, approve or reject proposals, restore versions, run connectors</td></tr>
+        <tr><th scope="row">admin</th><td>also manage accounts and connector settings</td></tr>
+      </tbody>
+    </table></div>
+    <p>Manage accounts in the app (<em>Collaboration › Account</em>) or on the command line; the server picks changes up within seconds. Passwords are hashed with scrypt in <code>data/users.json</code>.</p>
+    <div class="code"><pre><code>docker compose exec strata node scripts/users.mjs list
+docker compose exec strata node scripts/users.mjs set alice contributor   # asks for a password
+docker compose exec strata node scripts/users.mjs role alice approver
+docker compose exec strata node scripts/users.mjs disable alice</code></pre><button class="copy" type="button">Copy</button></div>
+    <p>For single sign-on (Entra ID, LDAP…), put an authentication proxy in front and create the same account names.</p>
+
+    <h2 id="map" style="--edge:var(--s1)">Building the map</h2>
+    <h3>Sites, zones, VLANs</h3>
+    <p>An information system (IS) is a site. <em>Zones, contacts</em> sets its zones (one level each, for example Industrial, Office, Core IT, Exposed), its VLANs with their ranges, and the IS contacts shown on assets that have none of their own. <em>Arrange plates</em> lets you drag a plate anywhere on its level; <em>Line up</em> puts a level back in a row.</p>
+    <h3>Assets</h3>
+    <p>Each asset has a type (server, firewall, router, switch, workstation, PLC…), a VLAN, an IP, a system, applications with their listening ports, vulnerabilities with CVSS, a criticality, incident contacts and notes. Search by name or IP to fly to it.</p>
+    <h3>Flows</h3>
+    <p>A flow goes from a source to a destination on a port: assets, the Internet, or a named Internet service. Strata suggests the devices it crosses (edge firewall for Internet traffic, core firewall or router between VLANs); untick <em>Suggested</em> to set the path yourself. Exposure follows from the flows: a port is <em>Internet</em>, <em>inter-VLAN</em> or <em>intra-VLAN</em> depending on where its traffic comes from.</p>
+    <h3>2D diagram</h3>
+    <p>The <em>2D diagram</em> view is the same model, flat: drag assets and plates, draw a flow from one asset to another (<kbd>F</kbd>), add an asset on a plate (<kbd>A</kbd>), move (<kbd>V</kbd>). Positions are shared with the 3D model.</p>
+    <h3>Theme</h3>
+    <p><em>Display › Theme</em>: Auto follows the system, Day and Night force it. <kbd>N</kbd> switches.</p>
+
+    <h2 id="proposals" style="--edge:var(--s6)">Proposals and history</h2>
+    <p>A contributor clicks <em>Propose a change</em>, then edits as usual: everything goes into a draft (blue <em>Draft</em> bar) and the live map does not move. <em>Submit for review</em> sends it to the approvers. A proposal can also start from a JSON file: a whole-map export, or one IS exported with <em>Export this IS (JSON)</em>.</p>
+    <p>The approver opens it from <em>Proposals</em>: the map shows the changes in place (green added, amber modified, dashed red for removed flows in 2D) with the full list. They comment, then <em>Approve and publish</em> or <em>Reject</em>. Nobody approves their own proposal unless <code>ALLOW_SELF_APPROVAL=true</code>. If the same items changed on the map meanwhile, the approver is warned and decides.</p>
+    <p>Every change is recorded (who, when, what) in <code>data/history.jsonl</code>. <em>History › View</em> shows the map as it was, read-only; <em>Restore</em> brings the whole map back to that version, and the restore is itself a version you can undo.</p>
+
+    <h2 id="services" style="--edge:var(--s9)">Internet services</h2>
+    <p>Instead of a single “Internet” cloud, describe the destinations you allow: ESET update servers, Ubuntu mirrors, Windows Update, NTP, your SaaS. Each service has hosts (FQDN or IP) and ports, and is either shared by every IS or specific to one. Flows can start or end at a service; services appear next to the cloud in 3D, at the top of the 2D diagram and in plans, and the firewall rules export uses their hosts as destinations.</p>
+
+    <h2 id="connectors" style="--edge:var(--s8)">Connectors</h2>
+    <p>In <em>Collaboration › Connectors</em>. An admin fills in each connector’s settings; <em>Test the connection</em> checks access; <em>Sync now</em> (approver) runs it in the background; <em>Sync automatically every … hours</em> schedules it. <strong>Connectors never write the map:</strong> each run prepares one proposal per IS, refreshed in place while it is still open. When the map already matches, no proposal is created.</p>
+    <p>Credentials are stored in <code>data/connectors.json</code> (mode 600), never sent back to browsers. For internal certificates, paste your CA in <em>More settings</em>, or tick <em>Accept any TLS certificate</em> on a trusted network. Assets remember their record in each tool (<code>ext</code>), so later syncs still match after a rename.</p>
+    <h3>Cyberwatch</h3>
+    <p>Reads the server list and each server’s CVEs (API v3). Matches assets by host name, then IP. Lowest severity and maximum per asset are configurable; CVEs ignored in Cyberwatch are left out by default. Cyberwatch owns the <code>CVE-…</code> entries of the assets it scans; findings typed by hand are kept. Create a read-only API key in <em>Profile › API keys</em>; Basic authentication is the default, the older HMAC signature is available for older instances.</p>
+    <h3>GLPI</h3>
+    <p>Reads computers, network devices, printers and phones through <code>apirest.php</code> (GLPI 9.5 and 10): IP addresses from network ports, operating system, installed software, technician and group in charge, location. The location picks the IS, with rules such as <code>Lyon = lyon</code> or <code>/^DC-?West/ = dcw</code>, otherwise the IS whose name appears in it. Existing assets get their system, applications and contacts (entries typed by hand stay); missing assets are created on the VLAN whose range holds their IP, or on a “To sort” plate. Enable the REST API, create an API client (App-Token) and a read-only service account with a user token.</p>
+    <h3>phpIPAM</h3>
+    <p>Reads sections, subnets, VLANs and addresses (<code>/api/{app}/</code>, phpIPAM 1.4+). A subnet already used as a VLAN range goes to that IS; otherwise rules on the section, location or description decide. Creates or completes VLANs (new ones arrive in an <em>Imported</em> zone), fills asset IPs, moves an asset to its subnet’s VLAN, and lists differing IPs without changing them. Create an API application with <em>Read</em> rights and <em>SSL with App code token</em> security.</p>
+    <h3>Palo Alto</h3>
+    <p>Two sources: a configuration file exported from the firewall or Panorama (<em>Import a configuration file</em>, open to contributors), or the XML API with a read-only key. Active <em>allow</em> rules become flows of the chosen IS:</p>
+    <ul>
+      <li>address objects and groups → assets by IP; a range expands into its assets up to a threshold (12 by default);</li>
+      <li>public addresses and FQDNs → an existing Internet service with the same host, or a new one;</li>
+      <li>services and service groups → ports; <code>application-default</code> → the usual ports of common App-IDs;</li>
+      <li><code>any</code> in an <code>untrust</code>, <code>internet</code>, <code>outside</code> or <code>wan</code> zone → the Internet;</li>
+      <li>the chosen firewall as the device crossed; Internet-to-admin or database ports flagged as risky.</li>
+    </ul>
+    <p>What cannot be drawn (internal <code>any</code>→<code>any</code>, dynamic groups, negations, addresses with no asset) is listed in the proposal. Flows from a rule that disappeared are removed; flows drawn by hand are never touched. A proposal from a file counts as the importer’s own for the four-eyes rule.</p>
+    <h3>Try them without your tools</h3>
+    <p>Load the demo, then start the simulator (fake Cyberwatch, GLPI, phpIPAM and PAN-OS on port 8099, with data matching the Lyon site) and use the addresses and credentials listed at the top of the script:</p>
+    <div class="code"><pre><code>docker compose exec -d strata node scripts/connector-sim.mjs</code></pre><button class="copy" type="button">Copy</button></div>
+
+    <h2 id="exports" style="--edge:var(--s0)">Plans and exports</h2>
+    <ul>
+      <li><strong>Architecture plan</strong> of an asset: every path to the Internet and every device crossed, as PNG or SVG; plans stay light whatever the theme.</li>
+      <li><strong>Flow matrix</strong> and <strong>firewall rules</strong> of an asset as CSV (a generic table, to map to your firewall’s object names).</li>
+      <li><strong>2D diagram</strong> as SVG.</li>
+      <li><strong>Export JSON</strong>: the whole map, or one IS, to back up, move or edit elsewhere and bring back as a proposal.</li>
+    </ul>
+
+    <h2 id="backups" style="--edge:var(--s7)">Backups</h2>
+    <p>To undo a mistake, use <em>History › Restore</em>. Backups are for losing the server. Strata copies <code>db.json</code> into <code>/data/backups/</code> at start, every <code>BACKUP_EVERY_HOURS</code>, before each import and before each restore, and keeps the latest <code>BACKUP_KEEP</code>.</p>
+    <div class="code"><pre><code>./scripts/backup.sh                                          # backups/strata-YYYYMMDD-HHMMSS.tar.gz: map, history, proposals, accounts, connectors
+./scripts/restore.sh backups/strata-20261024-120000.tar.gz   # everything back
+./scripts/restore.sh export.json                             # the map only</code></pre><button class="copy" type="button">Copy</button></div>
+    <p class="note">The archive contains the connector credentials: store it like a secret. Include it, or the <code>strata-data</code> volume, in your usual backup.</p>
+
+    <h2 id="upgrade" style="--edge:var(--s2)">Upgrading</h2>
+    <div class="code"><pre><code>./scripts/backup.sh
+git pull                      # or replace the files, keeping .env
+docker compose up -d --build  # or: docker compose pull &amp;&amp; docker compose up -d</code></pre><button class="copy" type="button">Copy</button></div>
+    <p><strong>Coming from IS Map 3D (0.5.0 or older)</strong>: the service is now <code>strata</code> and the volume <code>strata-data</code>. To keep your data, find the old volume with <code>docker volume ls</code> (usually <code>is-map_ismap-data</code>), add <code>DATA_VOLUME=is-map_ismap-data</code> to <code>.env</code>, then <code>docker compose down --remove-orphans &amp;&amp; docker compose up -d</code>. IS Map exports, backups and API scripts keep working.</p>
+
+    <h2 id="api" style="--edge:var(--s3)">API</h2>
+    <p>Every route uses the same credentials as the interface, with the rights of the account’s role. Writes need the headers <code>Content-Type: application/json</code> and <code>X-Requested-With: strata</code>. Group several writes into one history entry with <code>X-Batch</code> and <code>X-Batch-Label</code>. For a tool that should propose rather than write, give it a contributor account and use <code>POST /api/proposals</code>.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th scope="col">Route</th><th scope="col">Does</th></tr></thead>
+      <tbody>
+        <tr><td><code>GET /api/state</code></td><td>The whole map; <code>?at=REV</code> as it was after a version</td></tr>
+        <tr><td><code>GET /api/export</code></td><td>The same, as a file</td></tr>
+        <tr><td><code>PUT/DELETE /api/si/{id}</code></td><td>An IS: zones, VLANs, flows, contacts, services</td></tr>
+        <tr><td><code>PUT/DELETE /api/assets/{id}</code></td><td>An asset</td></tr>
+        <tr><td><code>PUT /api/wan</code>, <code>PUT /api/services</code></td><td>Inter-IS links; shared Internet services</td></tr>
+        <tr><td><code>POST /api/import</code></td><td>Replace the whole map</td></tr>
+        <tr><td><code>GET /api/history</code>, <code>POST /api/rollback</code></td><td>History; restore a version</td></tr>
+        <tr><td><code>/api/proposals…</code></td><td>Create, edit, submit, comment, approve, reject</td></tr>
+        <tr><td><code>GET /api/connectors</code>, <code>PUT /api/connectors/{id}</code></td><td>Connector settings (secrets masked; writing is admin only)</td></tr>
+        <tr><td><code>POST /api/connectors/{id}/test</code>, <code>/run</code></td><td>Test, or run (<code>{"wait": true}</code> waits for the result)</td></tr>
+        <tr><td><code>GET /api/users</code>, <code>PUT/DELETE /api/users/{name}</code></td><td>Accounts (admin)</td></tr>
+        <tr><td><code>GET /api/events</code></td><td>Server-Sent Events: <code>change</code>, <code>proposals</code>, <code>connectors</code></td></tr>
+        <tr><td><code>GET /healthz</code></td><td>Health check, no authentication</td></tr>
+      </tbody>
+    </table></div>
+    <div class="code"><pre><code>curl -u admin:PASSWORD -H 'Content-Type: application/json' -H 'X-Requested-With: strata' \
+  -X PUT https://strata.example.lan/api/assets/srv-erp-01 \
+  -d '{"site":"lyon","name":"srv-erp-01","type":"server","vlan":"v-lyo-20","ip":"10.20.0.20",
+       "os":"RHEL 8","role":"ERP","crit":3,
+       "vulns":[{"id":"CVE-2021-44228","title":"Log4Shell","cvss":10,"sev":"crit"}]}'</code></pre><button class="copy" type="button">Copy</button></div>
+    <p>The quickest way to learn the exact structure is an <em>Export JSON</em> of the demo.</p>
+
+    <h2 id="security" style="--edge:var(--s4)">Security and licence</h2>
+    <p>This map describes your weak points precisely: treat it as sensitive data.</p>
+    <ul>
+      <li>Keep it on an internal network or behind a VPN, over HTTPS, with a long unique <code>EDIT_PASS</code>.</li>
+      <li>Give everyone a named account with the lowest role that does the job: every change is attributed in the history.</li>
+      <li>The server sends strict security headers (CSP with no external script, no framing, no referrer) and refuses cross-site writes.</li>
+      <li>Connectors: use read-only service accounts, limited to the Strata server’s IP where the tool allows it.</li>
+    </ul>
+    <p>Strata is free software under the <a href="https://github.com/SolidGeeks/strata/blob/main/LICENSE">GNU AGPL v3</a>. You may use, modify and share it. If you let people use a <em>modified</em> version over a network, offer them its source: set <code>SOURCE_URL</code> to your fork.</p>
+
+    <h2 id="troubleshooting" style="--edge:var(--s5)">Troubleshooting</h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th scope="col">Symptom</th><th scope="col">What to check</th></tr></thead>
+      <tbody>
+        <tr><td>Blank page, no 3D</td><td><code>public/vendor/</code> is missing: rebuild with <code>docker compose up -d --build</code> (with npm registry access) or run <code>npm run setup</code>.</td></tr>
+        <tr><td>“This browser only” badge</td><td>The page cannot reach the API: it was opened as a local file, or the proxy blocks <code>/api/</code>.</td></tr>
+        <tr><td>Others see changes only after reloading</td><td>The proxy buffers <code>/api/events</code>: see <a href="#https">your own reverse proxy</a>.</td></tr>
+        <tr><td>“You have read-only access”</td><td>You are signed in as a viewer, or <code>READ_ONLY=true</code>.</td></tr>
+        <tr><td>Switching accounts</td><td>Browsers keep Basic credentials: use a private window, or close the browser.</td></tr>
+        <tr><td>Permission error on <code>/data</code></td><td>Keep the named volume. A host folder must belong to UID 1000: <code>chown -R 1000:1000 ./data</code>.</td></tr>
+        <tr><td>A connector cannot connect</td><td><em>Test the connection</em> names the cause: DNS, refused port, untrusted certificate, refused credentials.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2 id="limits" style="--edge:var(--s6)">Known limits</h2>
+    <ul>
+      <li>Storage is a single JSON file, fine for a few thousand assets.</li>
+      <li>Authentication is HTTP Basic; for SSO, use an authentication proxy.</li>
+      <li>Two approvers editing the same IS directly at the same moment: the last save wins (history lets you go back). Proposals detect conflicts.</li>
+      <li>Connectors follow the public API documentation of each tool and were tested against simulators: test, sync, and read the first proposal carefully. GLPI 11’s new API (<code>/api.php/v2</code>) is not supported yet.</li>
+      <li>Palo Alto: NAT rules, security profiles, dynamic address groups and the Panorama device-group hierarchy are not interpreted.</li>
+      <li>draw.io and Visio imports are not supported: only Strata JSON exports become proposals.</li>
+    </ul>
+  </article>
+</div>
+
+<footer class="foot">
+  <div class="wrap">
+    <p>Strata 0.5.2 · <a href="https://github.com/SolidGeeks/strata/blob/main/LICENSE">AGPL-3.0</a> · <a href="https://github.com/SolidGeeks/strata">github.com/SolidGeeks/strata</a> · <a href="https://github.com/SolidGeeks/strata/blob/main/CHANGELOG.md">Changelog</a></p>
+    <p>Cyberwatch, GLPI, phpIPAM and Palo Alto Networks are trademarks of their owners; Strata is not affiliated with them.</p>
+  </div>
+</footer>
+<script src="assets/js/site.js" defer></script>
+</body>
+</html>

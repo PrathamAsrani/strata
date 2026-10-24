@@ -1,0 +1,40 @@
+# systemd unit for running Strata without Docker.
+# 1. Install the app in /opt/strata and run "npm run setup" there.
+# 2. Create the user and data folder:
+#      sudo useradd --system --home /opt/strata --shell /usr/sbin/nologin strata
+#      sudo mkdir -p /var/lib/strata && sudo chown strata:strata /var/lib/strata
+# 3. Put your settings in /etc/strata.env (same keys as .env.example), chmod 600.
+# 4. sudo cp deploy/strata.service /etc/systemd/system/ && sudo systemctl daemon-reload
+#    sudo systemctl enable --now strata
+[Unit]
+Description=Strata
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=strata
+Group=strata
+WorkingDirectory=/opt/strata
+EnvironmentFile=/etc/strata.env
+Environment=NODE_ENV=production
+Environment=PORT=8080
+Environment=HOST=127.0.0.1
+Environment=DATA_DIR=/var/lib/strata
+ExecStart=/usr/bin/node server/server.js
+Restart=on-failure
+RestartSec=3
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/strata
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=true
+MemoryDenyWriteExecute=false
+
+[Install]
+WantedBy=multi-user.target

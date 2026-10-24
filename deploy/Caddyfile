@@ -1,0 +1,13 @@
+# HTTPS in front of Strata.
+# - Public DNS name reachable from the Internet: Caddy gets a Let's Encrypt certificate on its own.
+# - Internal name (LAN, VPN): keep "tls internal" below; Caddy signs with its own local CA.
+#   Install that CA on your workstations to avoid the browser warning:
+#   docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt ./caddy-root.crt
+{$SITE_ADDRESS} {
+	tls internal
+	encode gzip
+	reverse_proxy strata:8080 {
+		# Live updates use Server-Sent Events: never buffer them
+		flush_interval -1
+	}
+}

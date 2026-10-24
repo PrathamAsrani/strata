@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Strata</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="vendor/fonts/archivo/400.css">
+<link rel="stylesheet" href="vendor/fonts/archivo/500.css">
+<link rel="stylesheet" href="vendor/fonts/archivo/600.css">
+<link rel="stylesheet" href="vendor/fonts/archivo-narrow/500.css">
+<link rel="stylesheet" href="vendor/fonts/archivo-narrow/600.css">
+<link rel="stylesheet" href="vendor/fonts/archivo-narrow/700.css">
+<link rel="stylesheet" href="vendor/fonts/ibm-plex-mono/400.css">
+<link rel="stylesheet" href="vendor/fonts/ibm-plex-mono/500.css">
+<link rel="stylesheet" href="vendor/fonts/ibm-plex-mono/600.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="scene" aria-label="3D model of the information systems"></div>
+<div id="flat" hidden><svg id="flatSvg" role="application" aria-label="2D diagram of the information system: drag assets and plates, draw flows"></svg></div>
+<div id="viewSw" class="panel" hidden>
+  <div class="seg two" id="viewSeg" role="group" aria-label="View"><button data-v="3d" aria-pressed="true">3D model</button><button data-v="2d" aria-pressed="false">2D diagram</button></div>
+  <div id="tools2d" hidden>
+    <div class="seg three edit-only" role="group" aria-label="Tool"><button data-tool="move" aria-pressed="true" title="Select and move (V)">Move</button><button data-tool="flow" aria-pressed="false" title="Draw a flow from one asset to another (F)">+ Flow</button><button data-tool="asset" aria-pressed="false" title="Click on a plate to add an asset there (A)">+ Asset</button></div>
+    <div class="tb">
+      <button class="btn small" data-f="out" aria-label="Zoom out">−</button><button class="btn small" data-f="fit">Fit</button><button class="btn small" data-f="in" aria-label="Zoom in">+</button>
+      <button class="btn small" data-f="svg">Export SVG</button>
+    </div>
+  </div>
+</div>
+
+<header id="cart" class="panel"></header>
+<div id="modebar" class="panel" hidden role="status"></div>
+<button id="toggleCtl" class="panel" aria-expanded="false" aria-controls="ctl">Controls</button>
+
+<aside id="ctl" class="panel" aria-label="Navigation, editing and display">
+  <div class="sec" data-view="overview">
+    <h3 class="cap">Information systems</h3>
+    <div id="siteList" class="btns"></div>
+    <div class="btns edit-only" style="margin-top:8px">
+      <button class="btn small" data-act="new-site"><span>+ New IS</span></button>
+      <button class="btn small" data-act="new-wan"><span>+ Inter-IS link</span></button>
+    </div>
+  </div>
+  <div class="sec collab" hidden>
+    <h3 class="cap">Collaboration</h3>
+    <div class="btns">
+      <button class="btn small primary" id="newPropBtn" data-collab="new-prop" hidden><span>Propose a change</span></button>
+      <div class="btns row2">
+        <button class="btn small" data-collab="proposals"><span>Proposals</span><span class="mono propCount"></span></button>
+        <button class="btn small" data-collab="history"><span>History</span></button>
+      </div>
+      <button class="btn small" id="connBtn" data-collab="connectors" hidden><span>Connectors</span><span class="mono">CVE · INV · IP · FW</span></button>
+      <button class="btn small" id="accBtn" data-collab="account"><span>Account</span><span class="mono"></span></button>
+    </div>
+  </div>
+  <div class="sec" data-view="overview">
+    <h3 class="cap">Internet services</h3>
+    <div id="svcListOv" class="btns"></div>
+    <div class="btns edit-only" style="margin-top:8px"><button class="btn small" data-new-svc="global"><span>+ Internet service</span></button></div>
+  </div>
+  <div class="sec" data-view="overview">
+    <h3 class="cap">Data</h3>
+    <div class="btns">
+      <button class="btn small edit-only" data-act="demo"><span>Load demo (5 IS)</span></button>
+      <div class="btns row2">
+        <button class="btn small" data-act="export"><span>Export JSON</span></button>
+        <button class="btn small edit-only" data-act="import"><span>Import JSON</span></button>
+      </div>
+      <button class="btn small danger edit-only" data-act="wipe">Delete everything</button>
+    </div>
+  </div>
+  <div class="sec edit-only" data-view="site">
+    <h3 class="cap">Edit</h3>
+    <div class="btns row2">
+      <button class="btn small" data-act="new-asset"><span>+ Asset</span></button>
+      <button class="btn small" data-act="new-flow"><span>+ Flow</span></button>
+      <button class="btn small" data-act="new-vlan"><span>+ VLAN</span></button>
+      <button class="btn small" data-act="edit-site"><span>Zones, contacts</span></button>
+    </div>
+  </div>
+  <div class="sec" data-view="site">
+    <h3 class="cap"><label for="search">Search</label></h3>
+    <input id="search" class="search" type="search" placeholder="Name or IP, then Enter" autocomplete="off" list="assetList">
+    <datalist id="assetList"></datalist>
+  </div>
+  <div class="sec" data-view="site">
+    <h3 class="cap">Flows</h3>
+    <div class="ctlgrp">
+      <span class="fl">Direction</span>
+      <div class="seg three" id="dirSeg" role="group" aria-label="Flow direction"><button data-dir="all" aria-pressed="true">All</button><button data-dir="in" aria-pressed="false">Inbound</button><button data-dir="out" aria-pressed="false">Outbound</button></div>
+      <p class="sub" id="dirNote"></p>
+    </div>
+    <div class="ctlgrp">
+      <span class="fl">Colour by</span>
+      <div class="seg two" id="colSeg" role="group" aria-label="Flow colour"><button data-col="risk" aria-pressed="true">Risk</button><button data-col="exp" aria-pressed="false">Exposure</button></div>
+    </div>
+  </div>
+  <div class="sec" data-view="site">
+    <h3 class="cap">Minimum exposure</h3>
+    <div class="seg four" id="expSeg" role="group" aria-label="Minimum exposure"><button data-exp="0" aria-pressed="true">All</button><button data-exp="1" aria-pressed="false" title="Exposed at least within its VLAN">Intra</button><button data-exp="2" aria-pressed="false" title="Exposed to other VLANs or to the Internet">Inter</button><button data-exp="3" aria-pressed="false" title="Exposed to the Internet">Internet</button></div>
+  </div>
+  <div class="sec" data-view="site">
+    <h3 class="cap">Minimum severity</h3>
+    <div class="seg" id="sevSeg" role="group" aria-label="Minimum severity"></div>
+  </div>
+  <div class="sec" data-view="site">
+    <h3 class="cap">Analysis</h3>
+    <div class="btns">
+      <button class="btn" id="portsBtn" aria-pressed="false"><span>Exposed ports</span><span class="mono" id="portsCount"></span></button>
+      <button class="btn" id="pathBtn" aria-pressed="false"><span>Reachable from Internet</span><span class="mono" id="pathCount"></span></button>
+      <button class="btn" id="resetBtn" data-only3d><span>Reset view</span></button>
+    </div>
+  </div>
+  <div class="sec" data-view="site">
+    <h3 class="cap">Layout</h3>
+    <div class="ctlgrp">
+      <div class="seg two" id="modeSeg" role="group" aria-label="VLAN layout"><button data-mode="zones" aria-pressed="true">By zone</button><button data-mode="stack" aria-pressed="false">1 VLAN per floor</button></div>
+    </div>
+    <div class="ctlgrp">
+      <span class="fl">Asset spacing</span>
+      <div class="seg two" id="spaceSeg" role="group" aria-label="Asset spacing"><button data-space="compact" aria-pressed="true">Compact</button><button data-space="wide" aria-pressed="false">Comfortable</button></div>
+    </div>
+    <div class="ctlgrp" data-only3d>
+      <span class="fl">Standoffs</span>
+      <div class="seg three" id="postSeg" role="group" aria-label="Standoffs under the plates"><button data-posts="off" aria-pressed="true">Hidden</button><button data-posts="thin" aria-pressed="false">Thin</button><button data-posts="full" aria-pressed="false">Full</button></div>
+    </div>
+    <div class="ctlgrp edit-only" data-only3d>
+      <button class="btn small" id="arrangeBtn" aria-pressed="false"><span>Arrange plates</span><span class="mono">drag</span></button>
+      <p class="sub" id="arrangeNote">Drag a plate anywhere on its level (left, right, front, back), or use the arrows that appear in the VLAN list. “Line up” puts a level back in a row.</p>
+    </div>
+  </div>
+  <div class="sec" data-view="site">
+    <h3 class="cap">Internet services</h3>
+    <div id="svcList" class="btns"></div>
+    <div class="btns row2 edit-only" style="margin-top:8px"><button class="btn small" data-new-svc="site"><span>+ This IS</span></button><button class="btn small" data-new-svc="global"><span>+ Shared</span></button></div>
+  </div>
+  <div class="sec" data-view="site">
+    <h3 class="cap">Plates (VLANs)</h3>
+    <div id="vlans"></div>
+  </div>
+  <div class="sec">
+    <h3 class="cap">Display</h3>
+    <div class="ctlgrp">
+      <span class="fl">Theme</span>
+      <div class="seg three" id="themeSeg" role="group" aria-label="Theme"><button data-theme-set="auto" aria-pressed="true" title="Follow the system setting">Auto</button><button data-theme-set="light" aria-pressed="false">Day</button><button data-theme-set="dark" aria-pressed="false">Night</button></div>
+    </div>
+    <label class="row" for="optFlows"><span>Flow threads</span><input type="checkbox" id="optFlows" checked></label>
+    <label class="row" for="optRisk"><span>Risky flows only</span><input type="checkbox" id="optRisk"></label>
+    <label class="row" for="optLabels" data-view="site" data-only3d><span>Asset labels</span><input type="checkbox" id="optLabels" checked></label>
+    <label class="row" for="optPorts" data-view="site"><span>Exposed port tags</span><input type="checkbox" id="optPorts"></label>
+    <label class="row" for="optRotate" data-only3d><span>Auto-rotate</span><input type="checkbox" id="optRotate"></label>
+    <label class="row" for="optGap" data-view="site" data-only3d><span>Level height</span><input type="range" id="optGap" min="5" max="15" step="0.5" value="8"></label>
+  </div>
+  <div class="sec">
+    <h3 class="cap">Legend</h3>
+    <div class="legend" id="legend"></div>
+  </div>
+  <div class="sec about">
+    <p>Strata <span id="appVer">0.5.2</span>, free software under the <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">GNU AGPL v3</a>. <a id="srcLink" href="https://github.com/SolidGeeks/strata" target="_blank" rel="noopener">Source code</a></p>
+  </div>
+</aside>
+
+<aside id="det" class="panel" hidden aria-live="polite"></aside>
+<section id="empty" class="panel" hidden></section>
+<div id="toast" class="panel" role="status" hidden></div>
+<section id="plan" hidden aria-label="Architecture plan">
+  <div class="plan-bar panel">
+    <div class="plan-t"><span class="cap">Architecture plan</span><b id="planTitle"></b></div>
+    <div class="plan-tools">
+      <button class="btn small" data-plan="zoom-out" aria-label="Zoom out">−</button>
+      <button class="btn small" data-plan="fit">Fit</button>
+      <button class="btn small" data-plan="zoom-in" aria-label="Zoom in">+</button>
+      <button class="btn small" data-plan="svg"><span>Download SVG</span></button>
+      <button class="btn small" data-plan="png"><span>Download PNG</span></button>
+      <button class="close" data-plan="close" aria-label="Close the plan">×</button>
+    </div>
+  </div>
+  <div class="plan-view" id="planView"></div>
+</section>
+<div id="tip" class="panel" hidden></div>
+<div id="hint" class="panel"></div>
+<input type="file" id="io" accept="application/json,.json" tabindex="-1" aria-hidden="true">
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/OrbitControls.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
