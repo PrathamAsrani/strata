@@ -37,8 +37,9 @@ const USERS_FILE = path.join(CONFIG.dataDir, 'users.json');
 const HISTORY_FILE = path.join(CONFIG.dataDir, 'history.jsonl');
 const PROPOSALS_FILE = path.join(CONFIG.dataDir, 'proposals.json');
 const BACKUP_DIR = path.join(CONFIG.dataDir, 'backups');
-const ID_RE = /^[A-Za-z0-9_.:@+~-]{1,120}$/;
-const USER_RE = /^[A-Za-z0-9_.@-]{1,64}$/;
+// Ids and account names become object keys: the names that reach Object.prototype are refused
+const ID_RE = /^(?!(?:__proto__|constructor|prototype)$)[A-Za-z0-9_.:@+~-]{1,120}$/;
+const USER_RE = /^(?!(?:__proto__|constructor|prototype)$)[A-Za-z0-9_.@-]{1,64}$/;
 const ROLES = ['viewer', 'contributor', 'approver', 'admin'];
 const RANK = Object.fromEntries(ROLES.map((r, i) => [r, i]));
 
@@ -46,6 +47,8 @@ const log = (...a) => console.log(new Date().toISOString(), ...a);
 const clone = o => (o === undefined ? undefined : JSON.parse(JSON.stringify(o)));
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 function isObj(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
+// A key looked up in a map read from a request or a file: never an inherited property (toString, __proto__…)
+const own = (o, k) => (o != null && Object.hasOwn(o, k) ? o[k] : undefined);
 const httpError = (status, message, extra) => Object.assign(new Error(message), { status, extra });
 
 /* ---------------- Storage ---------------- */
@@ -131,7 +134,7 @@ function applyDoc(s, kind, id, value) {
   else if (kind === 'services') s.services = clone(value || []);
   else if (kind === 'all') { const v = value || {}; s.si = clone(v.si || {}); s.assets = clone(v.assets || {}); s.wan = clone(v.wan || []); s.services = clone(v.services || []); }
 }
-const docOf = (s, kind, id) => (kind === 'si' || kind === 'assets') ? (s[kind][id] ?? null) : kind === 'wan' ? s.wan : kind === 'services' ? s.services : { si: s.si, assets: s.assets, wan: s.wan, services: s.services };
+const docOf = (s, kind, id) => (kind === 'si' || kind === 'assets') ? (own(s[kind], id) ?? null) : kind === 'wan' ? s.wan : kind === 'services' ? s.services : { si: s.si, assets: s.assets, wan: s.wan, services: s.services };
 const change = (kind, id, after) => ({ kind, id, before: clone(docOf(state, kind, id)), after: clone(after) });
 // The map as it was right after revision `rev`
 function stateAt(rev) {
@@ -175,11 +178,11 @@ function cleanChanges(c) {
 }
 function fillBase(p) {
   p.base = p.base || { si: {}, assets: {} };
-  for (const kind of ['si', 'assets']) for (const id of Object.keys(p.changes[kind])) if (!(id in p.base[kind])) p.base[kind][id] = clone(state[kind][id] ?? null);
+  for (const kind of ['si', 'assets']) for (const id of Object.keys(p.changes[kind])) if (!Object.hasOwn(p.base[kind], id)) p.base[kind][id] = clone(own(state[kind], id) ?? null);
   if (p.changes.wan && !('wan' in p.base)) p.base.wan = clone(state.wan);
   if (p.changes.services && !('services' in p.base)) p.base.services = clone(state.services);
   // forget the base of documents no longer in the change set
-  for (const kind of ['si', 'assets']) for (const id of Object.keys(p.base[kind])) if (!(id in p.changes[kind])) delete p.base[kind][id];
+  for (const kind of ['si', 'assets']) for (const id of Object.keys(p.base[kind])) if (!Object.hasOwn(p.changes[kind], id)) delete p.base[kind][id];
   if (!p.changes.wan) delete p.base.wan;
   if (!p.changes.services) delete p.base.services;
 }
@@ -187,7 +190,7 @@ const countChanges = c => Object.keys(c.si).length + Object.keys(c.assets).lengt
 const summaryOf = p => ({ id: p.id, title: p.title, description: p.description, author: p.author, siteId: p.siteId, status: p.status, createdAt: p.createdAt, updatedAt: p.updatedAt, submittedAt: p.submittedAt || null, reviewedBy: p.reviewedBy || null, reviewedAt: p.reviewedAt || null, mergedRev: p.mergedRev || null, changes: countChanges(p.changes), comments: (p.comments || []).length, source: p.source || 'editor', connector: p.connector || null });
 function conflictsOf(p) {
   const out = [];
-  for (const kind of ['si', 'assets']) for (const [id, b] of Object.entries(p.base[kind] || {})) if (!same(state[kind][id], b)) out.push({ kind, id, name: nameOfDoc(kind, state[kind][id] || b) });
+  for (const kind of ['si', 'assets']) for (const [id, b] of Object.entries(p.base[kind] || {})) if (!same(own(state[kind], id), b)) out.push({ kind, id, name: nameOfDoc(kind, own(state[kind], id) || b) });
   if ('wan' in p.base && !same(state.wan, p.base.wan)) out.push({ kind: 'wan', id: null, name: 'Inter-IS links' });
   if ('services' in p.base && !same(state.services, p.base.services)) out.push({ kind: 'services', id: null, name: 'Internet services catalogue' });
   return out;
@@ -210,7 +213,7 @@ async function upsertProposal({ connector, connectorName, by, uploadedBy, siteId
     return { id: open.id, title: open.title, refreshed: true };
   }
   const pid = 'p-' + Date.now().toString(36) + crypto.randomBytes(3).toString('hex');
-  const p = { id: pid, title: String(title).slice(0, 140), description: String(description || '').slice(0, 4000), author, siteId: siteId && state.si[siteId] ? siteId : null, status: 'submitted', createdAt: now, updatedAt: now, submittedAt: now, baseRev: state.rev, changes: ch, base: { si: {}, assets: {} }, comments: [], source: 'connector', connector, uploadedBy: uploadedBy || null };
+  const p = { id: pid, title: String(title).slice(0, 140), description: String(description || '').slice(0, 4000), author, siteId: siteId && own(state.si, siteId) ? siteId : null, status: 'submitted', createdAt: now, updatedAt: now, submittedAt: now, baseRev: state.rev, changes: ch, base: { si: {}, assets: {} }, comments: [], source: 'connector', connector, uploadedBy: uploadedBy || null };
   fillBase(p);
   note(p, `Prepared by the ${connectorName} connector${by ? `, run started by ${by}` : ''}. Review the changes on the map, then approve or reject.`);
   proposals[pid] = p; await saveProposals();
@@ -229,7 +232,7 @@ function loadUsers() {
 }
 function saveUsers() { authCache.clear(); return writeJson(USERS_FILE, JSON.stringify({ users }, null, 2)).then(() => { try { usersMtime = fs.statSync(USERS_FILE).mtimeMs; } catch { } }); }
 function setUser(name, { role, password, disabled }) {
-  const u = users[name] || { createdAt: new Date().toISOString() };
+  const u = own(users, name) || { createdAt: new Date().toISOString() };
   if (role) u.role = role;
   if (password) { u.salt = crypto.randomBytes(16).toString('hex'); u.hash = hashPass(password, u.salt); u.passwordChangedAt = new Date().toISOString(); }
   if (disabled !== undefined) u.disabled = !!disabled;
@@ -239,11 +242,11 @@ function bootstrapUsers() {
   loadUsers();
   let changed = false;
   if (CONFIG.editPass) {
-    const u = users[CONFIG.editUser];
+    const u = own(users, CONFIG.editUser);
     if (!u || !u.hash || hashPass(CONFIG.editPass, u.salt) !== u.hash || u.role !== 'admin' || u.disabled) { setUser(CONFIG.editUser, { role: 'admin', password: CONFIG.editPass, disabled: false }); changed = true; }
   }
   if (CONFIG.viewPass) {
-    const u = users[CONFIG.viewUser];
+    const u = own(users, CONFIG.viewUser);
     if (!u || !u.hash || hashPass(CONFIG.viewPass, u.salt) !== u.hash) { setUser(CONFIG.viewUser, { role: u?.role || 'viewer', password: CONFIG.viewPass, disabled: false }); changed = true; }
   }
   if (changed) saveUsers();
@@ -261,13 +264,13 @@ function authenticate(req) {
   const key = crypto.createHash('sha256').update(raw).digest('hex'), hit = authCache.get(key);
   let ok = hit && hit.until > Date.now();
   if (!ok) {
-    const u = users[name];
+    const u = own(users, name);
     if (!u || u.disabled || !u.hash) return null;
     const a = Buffer.from(hashPass(pass, u.salt), 'hex'), b = Buffer.from(u.hash, 'hex');
     if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
     authCache.set(key, { until: Date.now() + 600000 });
   }
-  const u = users[name];
+  const u = own(users, name);
   if (!u || u.disabled) return null;
   const role = CONFIG.readOnly ? 'viewer' : (RANK[u.role] !== undefined ? u.role : 'viewer');
   return { user: name, role };
@@ -342,7 +345,7 @@ async function api(req, res, parts, url, auth) {
   });
   if (r1 === 'me' && id === 'password' && method === 'PUT') {
     if (auth.open) throw httpError(400, 'Accounts are not enabled on this server.');
-    const b = await readBody(req, 4096), u = users[auth.user];
+    const b = await readBody(req, 4096), u = own(users, auth.user);
     if (!u || hashPass(b?.current || '', u.salt) !== u.hash) throw httpError(403, 'Current password is wrong.');
     if (String(b?.next || '').length < 10) throw httpError(400, 'Use at least 10 characters.');
     setUser(auth.user, { password: b.next }); await saveUsers(); return send(res, 200, { ok: true });
@@ -366,7 +369,7 @@ async function api(req, res, parts, url, auth) {
   /* ---- live map: approvers and admins ---- */
   if ((r1 === 'si' || r1 === 'assets') && id !== undefined) {
     if (!ID_RE.test(id)) throw httpError(400, 'Invalid id');
-    if (method === 'GET') return state[r1][id] ? send(res, 200, state[r1][id]) : fail(res, 404, 'Not found');
+    if (method === 'GET') return own(state[r1], id) ? send(res, 200, own(state[r1], id)) : fail(res, 404, 'Not found');
     need(auth, 'approver');
     if (method === 'PUT') {
       const body = await readBody(req, CONFIG.maxDocBytes);
@@ -436,7 +439,7 @@ async function api(req, res, parts, url, auth) {
       fillBase(p); proposals[pid] = p; await saveProposals();
       return send(res, 200, { ok: true, proposal: p });
     }
-    const p = proposals[id];
+    const p = own(proposals, id);
     if (!p) throw httpError(404, 'Unknown proposal');
     const mine = p.author === (auth.user || 'anonymous') || auth.open;
     if (!r3 && method === 'GET') return send(res, 200, { proposal: p, conflicts: p.status === 'submitted' || p.status === 'draft' ? conflictsOf(p) : [] });
@@ -541,10 +544,10 @@ async function api(req, res, parts, url, auth) {
     if (id && method === 'PUT') {
       const b = await readBody(req, 4096);
       if (b?.role !== undefined && !ROLES.includes(b.role)) throw httpError(400, `Role must be one of ${ROLES.join(', ')}.`);
-      if (!users[id] && !b?.password) throw httpError(400, 'A new account needs a password.');
+      if (!own(users, id) && !b?.password) throw httpError(400, 'A new account needs a password.');
       if (b?.password && String(b.password).length < 10) throw httpError(400, 'Use at least 10 characters.');
       if (id === auth.user && (b?.disabled || (b?.role && b.role !== 'admin'))) throw httpError(400, 'You cannot remove your own admin access.');
-      setUser(id, { role: b?.role || users[id]?.role || 'viewer', password: b?.password, disabled: b?.disabled });
+      setUser(id, { role: b?.role || own(users, id)?.role || 'viewer', password: b?.password, disabled: b?.disabled });
       await saveUsers(); return send(res, 200, { ok: true });
     }
     if (id && method === 'DELETE') {

@@ -11,6 +11,8 @@ import * as phpipam from './phpipam.js';
 import { ConnectorError } from './util.js';
 
 const MODULES = { cyberwatch, glpi, phpipam, paloalto };
+// A connector id comes from the URL: only the four above, never an inherited property (__proto__, toString…)
+const known = id => Object.hasOwn(MODULES, id);
 const MASK = '••••••••';
 const COMMON = [
   { k: 'enabled', label: 'Enabled', type: 'bool', default: false },
@@ -56,7 +58,7 @@ export function createConnectors({ dataDir, getState, upsertProposal, log, write
     return MODULES[id].meta.fields.filter(f => f.required).every(f => s[f.k]);
   }
   function update(id, body) {
-    if (!MODULES[id]) throw new ConnectorError('Unknown connector');
+    if (!known(id)) throw new ConnectorError('Unknown connector');
     const c = cfgOf(id);
     for (const f of fieldsOf(id)) {
       if (!(f.k in (body || {}))) continue;
@@ -71,12 +73,12 @@ export function createConnectors({ dataDir, getState, upsertProposal, log, write
     return save();
   }
   async function test(id) {
-    if (!MODULES[id]) throw new ConnectorError('Unknown connector');
+    if (!known(id)) throw new ConnectorError('Unknown connector');
     return MODULES[id].test(effective(id));
   }
   // Starts a run; resolves when it is finished. opts: {by, xml, fileName, overrides}
   async function run(id, opts = {}) {
-    if (!MODULES[id]) throw new ConnectorError('Unknown connector');
+    if (!known(id)) throw new ConnectorError('Unknown connector');
     if (running.has(id)) throw new ConnectorError(`${MODULES[id].meta.name} is already running.`);
     const started = new Date().toISOString();
     const info = { startedAt: started, by: opts.by || '', file: opts.fileName || null };
@@ -130,9 +132,9 @@ export function createConnectors({ dataDir, getState, upsertProposal, log, write
   return {
     ids: Object.keys(MODULES),
     list: () => ({ connectors: Object.keys(MODULES).map(publicView), runs: store.runs.slice(0, 30) }),
-    get: id => (MODULES[id] ? publicView(id) : null),
+    get: id => (known(id) ? publicView(id) : null),
     update, test, run,
     isRunning: id => running.has(id),
-    exists: id => !!MODULES[id],
+    exists: known,
   };
 }

@@ -93,7 +93,8 @@ export const hash = s => crypto.createHash('sha1').update(String(s)).digest('hex
 // Index of the assets of the map, to find the one an outside record describes.
 // Order: the id the connector stored last time (asset.ext[connector]), then the host name, then the IP.
 export function assetIndex(state, siteIds) {
-  const byExt = {}, byName = {}, byIp = {};
+  // keys are host names and IPs from the map: no prototype, so an asset named "constructor" is just a name
+  const byExt = Object.create(null), byName = Object.create(null), byIp = Object.create(null);
   for (const [id, a] of Object.entries(state.assets)) {
     if (siteIds && !siteIds.includes(a.site)) continue;
     for (const [k, v] of Object.entries(a.ext || {})) byExt[`${k}:${v}`] = id;

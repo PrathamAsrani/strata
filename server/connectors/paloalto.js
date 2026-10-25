@@ -66,7 +66,8 @@ function findConfig(root) {
   return null;
 }
 function objectsOf(el) {
-  const o = { address: {}, group: {}, service: {}, svcGroup: {} };
+  // keys are object names from the configuration file: no prototype, so "__proto__" or "constructor" are just names
+  const o = { address: Object.create(null), group: Object.create(null), service: Object.create(null), svcGroup: Object.create(null) };
   if (!el) return o;
   for (const e of path(el, 'address', 'entry')) {
     const name = e.attrs.name; if (!name) continue;
@@ -102,7 +103,7 @@ export function parseConfig(xml) {
   const root = parseXml(xml);
   const config = findConfig(root);
   if (!config) throw new ConnectorError('This is not a PAN-OS configuration: no <config> element found.');
-  const objects = { shared: objectsOf(kid(config, 'shared')) }, rules = [];
+  const objects = Object.assign(Object.create(null), { shared: objectsOf(kid(config, 'shared')) }), rules = [];
   const shared = kid(config, 'shared');
   const dgs = path(config, 'devices', 'entry', 'device-group', 'entry');
   const vsyses = path(config, 'devices', 'entry', 'vsys', 'entry');
@@ -193,10 +194,10 @@ export function rulesToChanges(parsed, cfg, state) {
       if (s === 'application-default') {
         const apps = r.application.filter(a => a !== 'any');
         if (!apps.length) { out.add('any'); continue; }
-        for (const a of apps) (APP_PORTS[a] || [`app/${a}`]).forEach(p => out.add(p));
+        for (const a of apps) ((Object.hasOwn(APP_PORTS, a) && APP_PORTS[a]) || [`app/${a}`]).forEach(p => out.add(p));
         continue;
       }
-      if (PREDEF_SERVICES[s]) { PREDEF_SERVICES[s].forEach(p => out.add(p)); continue; }
+      if (Object.hasOwn(PREDEF_SERVICES, s)) { PREDEF_SERVICES[s].forEach(p => out.add(p)); continue; }
       const expand = (n, seen = new Set()) => {
         if (seen.has(n)) return; seen.add(n);
         const v = lookup(scope, 'service', n); if (v) { v.forEach(p => out.add(p)); return; }

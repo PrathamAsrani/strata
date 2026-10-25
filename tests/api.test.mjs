@@ -200,3 +200,62 @@ test('static files: path traversal cannot reach the server code', async () => {
   }
   assert.equal((await raw('/')).status, 200, 'the app itself is served');
 });
+
+test('reserved keys: __proto__ and friends cannot reach the object prototype', async () => {
+  const admin = as('admin'), bob = as('bob'), alice = as('alice');
+  // a contributor commenting on a "proposal" named after a prototype key
+  for (const id of ['__proto__', 'constructor', 'toString']) {
+    const r = await alice.post(`/api/proposals/${id}/comment`, { text: 'hello' });
+    assert.equal(r.status, 404, `${id}: ${JSON.stringify(r.data)}`);
+  }
+  // an admin creating an account named after one: refused, and no hidden account appears
+  const u = await admin.put('/api/users/__proto__', { role: 'admin', password: 'hidden-pass-123' });
+  assert.equal(u.status, 400, JSON.stringify(u.data));
+  for (const name of ['toString', 'constructor', 'hasOwnProperty']) {
+    assert.equal((await new Client(name, 'hidden-pass-123').get('/api/me')).status, 401, `${name} signed in`);
+  }
+  // an approver writing a map document under one
+  for (const kind of ['si', 'assets']) {
+    const r = await bob.put(`/api/${kind}/__proto__`, { name: 'x' });
+    assert.equal(r.status, 400, `${kind}: ${JSON.stringify(r.data)}`);
+    assert.equal((await bob.get(`/api/${kind}/toString`)).status, 404, `${kind}/toString`);
+  }
+  // an import carrying one
+  const imp = await bob.post('/api/import', JSON.parse('{"si": {"__proto__": {"name": "x"}}, "assets": {}}'));
+  assert.equal(imp.status, 400, JSON.stringify(imp.data));
+});
+
+test('reserved keys: connectors cope with prototype names in their input', async () => {
+  const { parseConfig, rulesToChanges } = await import('../server/connectors/paloalto.js');
+  const { assetIndex } = await import('../server/connectors/util.js');
+  const state = { si: { s1: { name: 'S1' } }, assets: { a1: { site: 's1', name: 'constructor', ip: '10.0.0.1' }, a2: { site: 's1', name: '__proto__', ip: '10.0.0.2' } } };
+  assert.equal(assetIndex(state).find({ name: 'toString' }), null);
+  assert.equal(assetIndex(state).find({ name: 'constructor' }), 'a1');
+  const xml = `<config><devices><entry><vsys><entry name="__proto__">
+    <address><entry name="__proto__"><ip-netmask>10.0.0.1/32</ip-netmask></entry></address>
+    <rulebase><security><rules><entry name="r1"><from><member>trust</member></from><to><member>trust</member></to>
+      <source><member>constructor</member></source><destination><member>10.0.0.2</member></destination>
+      <service><member>application-default</member></service><application><member>toString</member></application>
+      <action>allow</action></entry></rules></security></rulebase>
+  </entry></vsys></entry></devices></config>`;
+  const parsed = parseConfig(xml);
+  assert.equal(Object.getPrototypeOf(parsed.objects.shared.address), null);
+  assert.doesNotThrow(() => rulesToChanges(parsed, { site: 's1' }, state));
+});
+
+test('reserved keys: the users.mjs command line refuses them too', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const dir = mkdtempSync(join(tmpdir(), 'strata-users-'));
+  const run = (...args) => {
+    try {
+      return { code: 0, out: execFileSync(process.execPath, [join(root, 'scripts/users.mjs'), ...args], { env: { ...process.env, DATA_DIR: dir, NEW_PASSWORD: 'long-enough-1' }, encoding: 'utf8', stdio: 'pipe' }) };
+    } catch (e) { return { code: e.status, out: String(e.stderr) }; }
+  };
+  try {
+    for (const name of ['__proto__', 'constructor', 'prototype']) assert.equal(run('set', name, 'admin').code, 1, `set ${name}`);
+    assert.equal(run('set', 'alice', 'viewer').code, 0);
+    // an inherited property is not an account
+    for (const cmd of ['role', 'disable', 'delete']) assert.match(run(cmd, 'toString', 'admin').out, /No account named toString/, cmd);
+    assert.match(run('list').out, /^alice\s+viewer/m);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

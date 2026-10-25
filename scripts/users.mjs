@@ -14,6 +14,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FILE = path.join(path.resolve(process.env.DATA_DIR || path.join(ROOT, 'data')), 'users.json');
 const ROLES = ['viewer', 'contributor', 'approver', 'admin'];
+// Same rule as the server's USER_RE: account names become object keys, so the names that reach Object.prototype are refused
+const USER_RE = /^(?!(?:__proto__|constructor|prototype)$)[A-Za-z0-9_.@-]{1,64}$/;
 const load = () => { try { return JSON.parse(fs.readFileSync(FILE, 'utf8')).users || {}; } catch { return {}; } };
 const save = u => { fs.mkdirSync(path.dirname(FILE), { recursive: true }); fs.writeFileSync(FILE + '.tmp', JSON.stringify({ users: u }, null, 2)); fs.renameSync(FILE + '.tmp', FILE); };
 const die = m => { console.error(m); process.exit(1); };
@@ -30,15 +32,15 @@ if (!cmd || cmd === 'list') {
   const rows = Object.entries(users).map(([n, u]) => `${n.padEnd(24)} ${String(u.role).padEnd(12)} ${u.disabled ? 'disabled' : 'active'}`);
   console.log(rows.length ? rows.join('\n') : `No account yet (${FILE}).`);
 } else if (cmd === 'set') {
-  if (!name || !/^[A-Za-z0-9_.@-]{1,64}$/.test(name)) die('Give a name (letters, digits, . _ - @).');
+  if (!name || !USER_RE.test(name)) die('Give a name (letters, digits, . _ - @; not __proto__, constructor or prototype).');
   if (!ROLES.includes(role)) die(`Role must be one of: ${ROLES.join(', ')}`);
   const pass = await askPassword();
   if (String(pass).length < 10) die('Use at least 10 characters.');
   const salt = crypto.randomBytes(16).toString('hex');
-  users[name] = Object.assign(users[name] || { createdAt: new Date().toISOString() }, { role, salt, hash: crypto.scryptSync(pass, salt, 32).toString('hex'), disabled: false, passwordChangedAt: new Date().toISOString() });
+  users[name] = Object.assign((Object.hasOwn(users, name) && users[name]) || { createdAt: new Date().toISOString() }, { role, salt, hash: crypto.scryptSync(pass, salt, 32).toString('hex'), disabled: false, passwordChangedAt: new Date().toISOString() });
   save(users); console.log(`Account ${name} saved (${role}).`);
 } else if (['role', 'disable', 'enable', 'delete'].includes(cmd)) {
-  if (!users[name]) die(`No account named ${name}.`);
+  if (!name || !Object.hasOwn(users, name)) die(`No account named ${name}.`);
   if (cmd === 'role') { if (!ROLES.includes(role)) die(`Role must be one of: ${ROLES.join(', ')}`); users[name].role = role; }
   if (cmd === 'disable') users[name].disabled = true;
   if (cmd === 'enable') users[name].disabled = false;

@@ -2,6 +2,13 @@
 
 All notable changes to Strata (formerly IS Map 3D). Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.5.5] - 2026-10-25
+### Security
+- **Object prototype pollution through ids and account names** ([GHSA-56cq-r5jm-vpqg](https://github.com/SolidGeeks/strata/security/advisories/GHSA-56cq-r5jm-vpqg)). `__proto__` was accepted as a proposal, map document or account name, and the server looked these names up in plain objects. A contributor could change properties shared by every object of the server process by commenting on the proposal `__proto__`; an approver could hide map documents; an admin could create an admin account that no list showed, and that signed in under names such as `toString` until the next restart. `__proto__`, `constructor` and `prototype` are now refused as ids and account names, and every lookup ignores inherited properties. Upgrade to 0.5.5: no data migration is needed.
+### Fixed
+- Connectors: a Palo Alto configuration, or an asset of the map, named after a JavaScript built-in (`constructor`, `toString`…) made a run fail with an unexpected error. Connector ids from the URL only match the four connectors.
+- `scripts/users.mjs` followed the same rule as the server: `set __proto__` reported an account that was never saved, and `role`, `disable` or `delete` on a name such as `toString` acted on an account that did not exist.
+
 ## [0.5.4] - 2026-10-25
 ### Added
 - Signed images: every release carries a Sigstore build provenance attestation. Check one with `gh attestation verify oci://ghcr.io/solidgeeks/strata:0.5.4 --owner SolidGeeks`.
@@ -64,5 +71,7 @@ All notable changes to Strata (formerly IS Map 3D). Versions follow [Semantic Ve
 ## [0.1.0]
 - First release: 3D map of IS, zones, VLANs, assets, flows, exposure, vulnerabilities and incident contacts.
 
+[0.5.5]: https://github.com/SolidGeeks/strata/releases/tag/v0.5.5
+[0.5.5]: https://github.com/SolidGeeks/strata/releases/tag/v0.5.5
 [0.5.4]: https://github.com/SolidGeeks/strata/releases/tag/v0.5.4
 [0.5.3]: https://github.com/SolidGeeks/strata/releases/tag/v0.5.3
