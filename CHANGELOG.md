@@ -2,10 +2,13 @@
 
 All notable changes to Strata (formerly IS Map 3D). Versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.5.4] - 2026-10-25
 ### Added
+- Signed images: every release carries a Sigstore build provenance attestation. Check one with `gh attestation verify oci://ghcr.io/solidgeeks/strata:0.5.4 --owner SolidGeeks`.
 - API tests (`npm test`): authentication, roles, cross-site write protection, proposals and the four-eyes rule, conflicts, history and rollback, import limits, path traversal.
 - CI workflow running them on Node 20 and 22 for every push and pull request.
+### Changed
+- The Release workflow runs the tests first, and publishes nothing if they fail.
 
 ## [0.5.3] - 2026-10-25
 ### Added

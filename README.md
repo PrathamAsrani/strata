@@ -1,6 +1,6 @@
 # Strata — v0.5
 
-[![Release](https://img.shields.io/github/v/release/SolidGeeks/strata)](https://github.com/SolidGeeks/strata/releases) [![Licence AGPL-3.0](https://raw.githubusercontent.com/SolidGeeks/.github/main/assets/badges/license-agpl.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/SolidGeeks/strata)](https://github.com/SolidGeeks/strata/releases) [![Licence AGPL-3.0](https://raw.githubusercontent.com/SolidGeeks/.github/main/assets/badges/license-agpl.svg)](LICENSE) [![Signed releases](https://raw.githubusercontent.com/SolidGeeks/.github/main/assets/badges/signed-releases.svg)](#2-démarrage-rapide-avec-docker) [![Tests](https://github.com/SolidGeeks/strata/actions/workflows/ci.yml/badge.svg)](https://github.com/SolidGeeks/strata/actions/workflows/ci.yml)
 
 **English:** Strata is a self-hosted 3D map of your information systems — zones, VLANs, assets, flows, exposure, vulnerabilities and incident contacts. Website and documentation: **https://solidgeeks.github.io/strata/**
 
@@ -139,6 +139,14 @@ docker compose up -d --build    # construit l'image ici (accès au registre npm 
 Sous Windows (PowerShell ou cmd) : `copy .env.example .env`, puis éditez `.env` avec le Bloc-notes (`notepad .env`).
 
 Une fois une version publiée sur GitHub (tag `vX.Y.Z`, voir le workflow `Release`), `docker compose pull && docker compose up -d` récupère l'image toute prête `ghcr.io/solidgeeks/strata`. Avant cela, `pull` répond `denied` : l'image n'existe pas encore.
+
+Chaque image publiée est **signée** : une attestation prouve qu'elle a été construite par le workflow `Release` de ce dépôt, à partir du code du tag. Pour le vérifier avant de la déployer (il faut la [CLI GitHub](https://cli.github.com/)) :
+
+```bash
+gh attestation verify oci://ghcr.io/solidgeeks/strata:0.5.4 --owner SolidGeeks
+```
+
+La commande doit afficher `Verification succeeded!`. Si elle échoue, n'utilisez pas l'image et signalez-le (voir [SECURITY.md](SECURITY.md)). Les images antérieures à 0.5.4 ne sont pas signées.
 
 Ouvrez ensuite http://localhost:8080 et connectez-vous avec `EDIT_USER` / `EDIT_PASS`.
 
@@ -358,6 +366,7 @@ Cette carte décrit précisément vos points faibles : traitez-la comme une donn
 - Gardez-la sur un réseau interne ou derrière un VPN, en HTTPS, avec un `EDIT_PASS` long et unique.
 - Donnez le compte `viewer` aux personnes qui n'ont qu'à consulter.
 - Le serveur envoie des en-têtes de sécurité stricts (CSP sans script externe, pas d'intégration en iframe, pas de référent) et refuse les écritures inter-sites.
+- Les images Docker publiées sont signées (attestation de provenance Sigstore) : vérifiez-les avec `gh attestation verify` (section 2).
 - Ces protections (authentification, rôles, écritures inter-sites, règle des quatre yeux, accès aux fichiers du serveur) sont vérifiées par les tests automatiques à chaque modification du code (section 13).
 - Donnez à chacun un compte nominatif avec le rôle le plus bas qui suffit : chaque changement est attribué dans l'historique.
 - Connecteurs : utilisez des comptes de service en **lecture seule** dans Cyberwatch, GLPI, phpIPAM et PAN-OS, restreints à l'IP du serveur Strata quand l'outil le permet. Leurs secrets sont dans `data/connectors.json` : protégez le volume et les archives de sauvegarde.
