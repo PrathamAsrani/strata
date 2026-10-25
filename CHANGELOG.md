@@ -2,6 +2,11 @@
 
 All notable changes to Strata (formerly IS Map 3D). Versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+### Added
+- API tests (`npm test`): authentication, roles, cross-site write protection, proposals and the four-eyes rule, conflicts, history and rollback, import limits, path traversal.
+- CI workflow running them on Node 20 and 22 for every push and pull request.
+
 ## [0.5.3] - 2026-10-25
 ### Added
 - Release workflow: every `vX.Y.Z` tag publishes the prebuilt image `ghcr.io/solidgeeks/strata` and a GitHub release, so `docker compose pull` works.

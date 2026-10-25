@@ -107,6 +107,7 @@ strata/
 ├── server/server.js   le serveur (API + fichiers statiques)
 ├── scripts/           vendor.mjs (récupère three.js et les polices), users.mjs (comptes), backup.sh, restore.sh
 ├── deploy/            Caddyfile (HTTPS), strata.service (systemd)
+├── tests/             tests de l'API (npm test)
 ├── Dockerfile, docker-compose.yml, .env.example
 └── package.json
 ```
@@ -357,6 +358,7 @@ Cette carte décrit précisément vos points faibles : traitez-la comme une donn
 - Gardez-la sur un réseau interne ou derrière un VPN, en HTTPS, avec un `EDIT_PASS` long et unique.
 - Donnez le compte `viewer` aux personnes qui n'ont qu'à consulter.
 - Le serveur envoie des en-têtes de sécurité stricts (CSP sans script externe, pas d'intégration en iframe, pas de référent) et refuse les écritures inter-sites.
+- Ces protections (authentification, rôles, écritures inter-sites, règle des quatre yeux, accès aux fichiers du serveur) sont vérifiées par les tests automatiques à chaque modification du code (section 13).
 - Donnez à chacun un compte nominatif avec le rôle le plus bas qui suffit : chaque changement est attribué dans l'historique.
 - Connecteurs : utilisez des comptes de service en **lecture seule** dans Cyberwatch, GLPI, phpIPAM et PAN-OS, restreints à l'IP du serveur Strata quand l'outil le permet. Leurs secrets sont dans `data/connectors.json` : protégez le volume et les archives de sauvegarde.
 
@@ -388,3 +390,15 @@ Cette carte décrit précisément vos points faibles : traitez-la comme une donn
 - Palo Alto : les règles NAT, les profils de sécurité, les groupes d'adresses dynamiques et la hiérarchie des groupes de périphériques Panorama ne sont pas interprétés ; seules les règles de sécurité *allow*. Une règle trop large (`any` interne, grande plage) est signalée au lieu d'être dessinée.
 - GLPI : un appel par équipement (plus un par technicien et par logiciel inconnu, mis en cache) ; comptez quelques minutes pour plusieurs milliers d'équipements. Le nouveau API GLPI 11 (`/api.php/v2`) n'est pas encore pris en charge.
 - NetBox et NetFlow ne sont pas encore connectés.
+
+## 13. Développement et tests
+
+```bash
+npm test
+```
+
+Les tests démarrent un vrai serveur sur un dossier de données temporaire, créent un compte par rôle et vérifient l'API par HTTP : authentification, rôles, protection contre les écritures inter-sites, cycle des propositions et règle des quatre yeux, conflits, historique et rollback, import (ids, taille maximale), et impossibilité de lire les fichiers du serveur avec `../`. Aucune dépendance à installer : il faut seulement Node.js 20 ou plus.
+
+Le workflow `CI` les lance sur Node 20 et 22 à chaque push sur `main` et à chaque pull request. Une modification qui touche à l'API doit être accompagnée d'un test.
+
+Les contributions suivent le [Solid standard](https://github.com/SolidGeeks/.github/blob/main/CONTRIBUTING.md) : commits signés avec `git commit -s` (DCO), pas de CLA. Pour signaler une vulnérabilité : [SECURITY.md](SECURITY.md).
