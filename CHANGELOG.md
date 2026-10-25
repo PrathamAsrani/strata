@@ -2,6 +2,16 @@
 
 All notable changes to Strata (formerly IS Map 3D). Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.5.3] - 2026-10-25
+### Added
+- Release workflow: every `vX.Y.Z` tag publishes the prebuilt image `ghcr.io/solidgeeks/strata` and a GitHub release, so `docker compose pull` works.
+- `.env.example` lists and explains every setting (it was shipped as `venvexample`, incomplete).
+- `SECURITY.md` with supported versions.
+- `package-lock.json`, so `npm run setup` (`npm ci`) works.
+### Changed
+- Licensed AGPL-3.0-or-later, with an SPDX header in every source file.
+- `.gitignore` and `.dockerignore` keep `.env` and `data/` out of the repository and of the image build context.
+
 ## [0.5.2] - 2026-10-24
 ### Added
 - Theme switch in *Display*: Auto (follows the system), Day, Night. Keyboard shortcut **N**.
