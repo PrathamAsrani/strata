@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Shared helpers for the connectors: an HTTP client (self-signed certificates, custom CA, timeouts),
 // IPv4 arithmetic, a small XML parser (for PAN-OS) and the rules that match outside records to assets.
 import http from 'node:http';

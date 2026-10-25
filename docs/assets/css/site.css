@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 /* Strata website. One family (Archivo, variable width) whose width axis is the signature:
    headings stack lines at alternating widths, like strata. IBM Plex Mono for commands only. */
 @font-face { font-family: "Archivo"; src: url(../fonts/archivo-var.woff) format("woff"); font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; }

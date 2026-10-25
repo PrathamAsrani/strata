@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // GLPI (legacy REST API, apirest.php) → assets: inventory (computers, network devices, printers, phones),
 // installed software (→ applications), technician in charge and technical group (→ incident contacts),
 // location (→ which IS). Works with GLPI 9.5 and 10 (the "API" setting must be on, with an App-Token if the

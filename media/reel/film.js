@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Strata: 48 s product reel (hero film of the website). The product's own low-poly scene (cutting mat,
 // VLAN plates on steel standoffs, racks, pins, threads, 2D diagram cards, mode bar, connectors panel,
 // theme switch) redrawn in orthographic isometric from the app's Lyon demo data and both palettes.

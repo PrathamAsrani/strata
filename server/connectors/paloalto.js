@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Palo Alto Networks (PAN-OS firewall or Panorama) → flows of an IS.
 // Source: a configuration file (Device > Setup > Operations > Export named configuration snapshot, or
 // Panorama export) uploaded in the app, or the XML API (type=export&category=configuration, read-only key).

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Connector simulator: fake Cyberwatch, GLPI, phpIPAM and PAN-OS APIs on http://localhost:8099, with data
 // that matches the Lyon IS of the demo. Use it to try the connectors before plugging in the real tools:
 //   node scripts/connector-sim.mjs

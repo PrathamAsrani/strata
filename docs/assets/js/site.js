@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Strata website: the hero film (a looping video with a chapter strip), the player with sound,
 // the theme switch, copy buttons, the day/night comparison and the documentation table of contents.
 (function () {

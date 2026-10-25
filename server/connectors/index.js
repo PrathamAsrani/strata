@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Connector manager: settings (data/connectors.json, secrets never sent back to browsers), runs (by hand or
 // on a schedule) and their outcome. A run never writes the map: it prepares proposals that an approver
 // reviews like any other (one per IS, refreshed in place while still open).

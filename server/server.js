@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Strata — self-hosted server (formerly IS Map 3D).
 // Zero dependencies: Node.js >= 20. Serves the web app and a small JSON API, stores the map in one JSON
 // file, keeps a version history (rollback), named accounts with roles, and proposals that an approver

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Strata score: house bed in D minor, 120 bpm, 48 s. Pure numpy/scipy, seeded.
 Writes audio/music.wav (48 kHz stereo) and beats.json (exact grid: offset 0, period 0.5 s).
 Sections (beats): intro 0-16, build 16-32, drop 32-48, groove 48-64, lift 64-72, night 72-80, end 80-96.

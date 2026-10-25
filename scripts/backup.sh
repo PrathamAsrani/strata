@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Copies everything Strata keeps (map, history, proposals, accounts) out of the Docker volume into ./backups/.
 # Usage: ./scripts/backup.sh
 set -eu

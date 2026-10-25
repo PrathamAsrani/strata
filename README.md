@@ -1,6 +1,6 @@
 # Strata — v0.5
 
-[![Release](https://img.shields.io/github/v/release/SolidGeeks/strata)](https://github.com/SolidGeeks/strata/releases) [![Licence AGPL-3.0](https://img.shields.io/badge/licence-AGPL--3.0-5e7d6c)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/SolidGeeks/strata)](https://github.com/SolidGeeks/strata/releases) [![Licence AGPL-3.0](https://raw.githubusercontent.com/SolidGeeks/.github/main/assets/badges/license-agpl.svg)](LICENSE)
 
 **English:** Strata is a self-hosted 3D map of your information systems — zones, VLANs, assets, flows, exposure, vulnerabilities and incident contacts. Website and documentation: **https://solidgeeks.github.io/strata/**
 
@@ -170,6 +170,9 @@ Par défaut, le port n'écoute que sur la machine elle-même (`127.0.0.1:8080`).
 | `PORT` / `HOST` | `8080` / `0.0.0.0` | Écoute du serveur. |
 | `DATA_DIR` | `/data` (Docker) | Dossier des données et des sauvegardes. |
 | `SITE_ADDRESS` | — | Nom DNS utilisé par le proxy HTTPS (section 4). |
+| `CONNECTORS` | activés | `false` désactive les connecteurs (Cyberwatch, GLPI, phpIPAM, Palo Alto). |
+| `SOURCE_URL` | `https://github.com/SolidGeeks/strata` | Lien *Source code* de l'app (AGPL) : faites-le pointer vers votre fork si vous modifiez le code. |
+| `DATA_VOLUME` | `strata-data` | Nom du volume Docker des données (reprise d'une installation IS Map, voir plus haut). |
 
 Après une modification de `.env`, appliquez-la avec `docker compose up -d`.
 

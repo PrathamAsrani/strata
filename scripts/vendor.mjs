@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Copies the browser libraries and fonts from node_modules into public/vendor,
 // so the app runs fully offline (no CDN, no Google Fonts).
 import fs from 'node:fs';

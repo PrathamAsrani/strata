@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Puts a backup back, then restarts the app.
 # Usage: ./scripts/restore.sh backups/strata-20261024-120000.tar.gz   (map, history, proposals, accounts)
 #        ./scripts/restore.sh some-file.json                          (map only: a db.json or an "Export JSON" file)

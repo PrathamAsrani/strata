@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Cyberwatch → vulnerabilities of the assets.
 // API v3: GET /api/v3/vulnerabilities/servers (paginated list), then GET /api/v3/vulnerabilities/servers/{id}
 // for each server that matches an asset of the map (its "cve_announcements": cve_code, score, level…).

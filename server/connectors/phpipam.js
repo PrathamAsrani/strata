@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // phpIPAM → VLANs and addresses of the IS.
 // API: /api/{app_id}/sections/, sections/{id}/subnets/, vlan/, tools/locations/, subnets/{id}/addresses/
 // Authentication: the app code of an API application with "SSL with App code token" security (header

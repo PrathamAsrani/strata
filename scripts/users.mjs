@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Manage Strata accounts from the command line (works while the server runs).
 //   node scripts/users.mjs list
 //   node scripts/users.mjs set <name> <viewer|contributor|approver|admin>   (asks for a password, or NEW_PASSWORD=...)

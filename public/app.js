@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 (function(){
 'use strict';
 // The 3D libraries are copied into public/vendor by "npm run setup" or the Docker build
