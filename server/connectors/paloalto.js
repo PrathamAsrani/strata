@@ -4,7 +4,7 @@
 // Each "allow" security rule becomes flows: source address objects → assets of the IS (by IP) or the
 // Internet / an Internet service (public addresses, FQDN), destination likewise, services → ports, and the
 // firewall as the device the flows cross.
-import { request, expectOk, ConnectorError, parseXml, kids, kid, path, txt, members, parseRange, isPrivateRange, inRange, isIp, slug, hash, norm } from './util.js';
+import { request, expectOk, ConnectorError, stripTags, parseXml, kids, kid, path, txt, members, parseRange, isPrivateRange, inRange, isIp, slug, hash, norm } from './util.js';
 
 export const meta = {
   id: 'paloalto', name: 'Palo Alto', what: 'Security rules of a PAN-OS firewall or Panorama, turned into flows',
@@ -44,12 +44,12 @@ async function fetchConfig(cfg) {
     const r = await request(`${base}/api/?type=keygen`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/xml' }, body: new URLSearchParams({ user: cfg.user, password: cfg.password }).toString(), tls: cfg.tls });
     await expectOk(r, 'PAN-OS keygen');
     const m = /<key>([^<]+)<\/key>/.exec(r.text);
-    if (!m) throw new ConnectorError(`PAN-OS refused the user name or password: ${(/<msg>([\s\S]*?)<\/msg>/.exec(r.text) || [, r.text.slice(0, 160)])[1].replace(/<[^>]+>/g, '').trim()}`);
+    if (!m) throw new ConnectorError(`PAN-OS refused the user name or password: ${stripTags((/<msg>([\s\S]*?)<\/msg>/.exec(r.text) || [, r.text.slice(0, 160)])[1])}`);
     key = m[1];
   }
   const r = await request(`${base}/api/?type=export&category=configuration`, { headers: { 'X-PAN-KEY': key, Accept: 'application/xml' }, tls: cfg.tls, timeoutMs: 120000 });
   await expectOk(r, 'PAN-OS export');
-  if (/<response[^>]*status="error"/.test(r.text)) throw new ConnectorError(`PAN-OS: ${(/<msg>([\s\S]*?)<\/msg>/.exec(r.text) || [, 'error'])[1].replace(/<[^>]+>/g, ' ').trim()}`);
+  if (/<response[^>]*status="error"/.test(r.text)) throw new ConnectorError(`PAN-OS: ${stripTags((/<msg>([\s\S]*?)<\/msg>/.exec(r.text) || [, 'error'])[1])}`);
   return r.text;
 }
 export async function test(cfg) {

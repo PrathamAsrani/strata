@@ -580,17 +580,17 @@ function placeCtl(){
 }
 addEventListener('resize',placeCtl);
 function renderSiteList(){
-  $('#siteList').innerHTML=SITES.length?SITES.map(s=>`<button class="site" data-site="${s.id}" aria-pressed="${state.ovSelId===s.id}"><b>${esc(s.name)}</b><span class="c" title="Critical vulnerabilities">${s.stats.crit} crit.</span><small>${esc(s.kind||'IS')} · ${plural(s.stats.vlans,'VLAN')} · ${plural(s.stats.assets,'asset')}</small></button>`).join(''):'<p class="empty">No information system yet.</p>';
+  $('#siteList').innerHTML=SITES.length?SITES.map(s=>`<button class="site" data-site="${esc(s.id)}" aria-pressed="${state.ovSelId===s.id}"><b>${esc(s.name)}</b><span class="c" title="Critical vulnerabilities">${s.stats.crit} crit.</span><small>${esc(s.kind||'IS')} · ${plural(s.stats.vlans,'VLAN')} · ${plural(s.stats.assets,'asset')}</small></button>`).join(''):'<p class="empty">No information system yet.</p>';
 }
 function renderVlanList(){
   // By zone: listed left to right as on the level. One VLAN per floor: listed top to bottom.
   const zm=state.mode==='zones',L=zm?['←','→','Move left','Move right']:['↑','↓','Move up','Move down'];
   $('#vlans').innerHTML=ZONES.slice().reverse().filter(z=>z.vlans.length).map(z=>{const vs=zm?z.vlans:z.vlans.slice().reverse();return `<div class="zone-h">${esc(z.name.toUpperCase())}${zm&&z.vlans.some(v=>v.place)?` <button class="ibtn mvbox-r edit-only" data-reset-zone="${esc(z.id)}" title="Line the plates of this level up again">Line up</button>`:zm&&vs.length>1?' <span>left → right</span>':''}</div>`+vs.map((v,i)=>{
     const first=i===0,last=i===vs.length-1,dA=zm?-1:1,dB=zm?1:-1;
-    return `<div class="vrow"><label class="vlan" for="vl-${v.id}"><input type="checkbox" id="vl-${v.id}" data-vlan="${v.id}" ${state.hidden.has(v.id)?'':'checked'}>
+    return `<div class="vrow"><label class="vlan" for="vl-${v.id}"><input type="checkbox" id="vl-${v.id}" data-vlan="${esc(v.id)}" ${state.hidden.has(v.id)?'':'checked'}>
     <span class="nm"><b><i class="sw" style="background:var(--c${v.ci})"></i>VLAN ${esc(v.num)} · ${esc(v.name)}</b><small>${esc(v.cidr||'—')}</small></span><span class="ct">${ASSETS.filter(a=>a.vlan===v.id).length}</span></label>
-    <span class="mvbox edit-only"><button class="ibtn mvb" data-mv="${v.id}" data-d="${dA}" aria-label="${L[2]} VLAN ${esc(v.num)}" ${first?'disabled':''}>${L[0]}</button><button class="ibtn mvb" data-mv="${v.id}" data-d="${dB}" aria-label="${L[3]} VLAN ${esc(v.num)}" ${last?'disabled':''}>${L[1]}</button></span>
-    <button class="ibtn edit-only" data-edit-vlan="${v.id}" aria-label="Edit VLAN ${esc(v.num)}">Edit</button></div>`;}).join('');}).join('')||'<p class="empty">No VLAN yet.</p>';
+    <span class="mvbox edit-only"><button class="ibtn mvb" data-mv="${esc(v.id)}" data-d="${dA}" aria-label="${L[2]} VLAN ${esc(v.num)}" ${first?'disabled':''}>${L[0]}</button><button class="ibtn mvb" data-mv="${esc(v.id)}" data-d="${dB}" aria-label="${L[3]} VLAN ${esc(v.num)}" ${last?'disabled':''}>${L[1]}</button></span>
+    <button class="ibtn edit-only" data-edit-vlan="${esc(v.id)}" aria-label="Edit VLAN ${esc(v.num)}">Edit</button></div>`;}).join('');}).join('')||'<p class="empty">No VLAN yet.</p>';
   $('#assetList').innerHTML=ASSETS.map(a=>`<option value="${esc(a.name)}">${esc(a.ip||'')}</option>`).join('');
   $('#pathCount').textContent=SITE.stats.reach;
   $('#portsCount').textContent=SITE.stats.ports;
@@ -1064,8 +1064,8 @@ function showAsset(a){
   const showIn=state.dir!=='out',showOut=state.dir!=='in';
   openDet(`<div class="d-head"><div><span class="cap">${esc(TYPE_LABEL[a.type])}</span><h2>${esc(a.name)}</h2><p>${esc(a.ip||'No IP address')}</p></div><button class="close" data-close aria-label="Close the asset sheet">×</button></div>
   <div class="d-body">
-  <div class="actions edit-only"><button class="btn small" data-edit-asset="${a.id}">Edit</button><button class="btn small" data-new-flow-to="${a.id}">+ Inbound flow</button><button class="btn small" data-new-flow-from="${a.id}">+ Outbound flow</button></div>
-  <div class="actions docs"><button class="btn small" data-plan-asset="${a.id}">2D plan</button><button class="btn small" data-csv-flows="${a.id}">Flow matrix (CSV)</button><button class="btn small" data-csv-fw="${a.id}">Firewall rules (CSV)</button></div>
+  <div class="actions edit-only"><button class="btn small" data-edit-asset="${esc(a.id)}">Edit</button><button class="btn small" data-new-flow-to="${esc(a.id)}">+ Inbound flow</button><button class="btn small" data-new-flow-from="${esc(a.id)}">+ Outbound flow</button></div>
+  <div class="actions docs"><button class="btn small" data-plan-asset="${esc(a.id)}">2D plan</button><button class="btn small" data-csv-flows="${esc(a.id)}">Flow matrix (CSV)</button><button class="btn small" data-csv-fw="${esc(a.id)}">Firewall rules (CSV)</button></div>
   <dl class="kv">
     <dt>IS</dt><dd>${esc(SITE.name)}</dd>
     <dt>VLAN</dt><dd><i class="sw" style="display:inline-block;background:var(--c${v.ci});margin-right:7px"></i>${esc(v.num)} · ${esc(v.name)}</dd>
@@ -1092,7 +1092,7 @@ function showPorts(){
   const groups=['internet','inter','intra'].map(k=>({k,list:ASSETS.filter(a=>a.exp===k).sort((a,b)=>SEV[b.sev].rank-SEV[a.sev].rank)}));
   openDet(`<div class="d-head"><div><span class="cap">Analysis · IS ${esc(SITE.name)}</span><h2>Exposed ports</h2><p>Ports that receive at least one inbound flow</p></div><button class="close" data-close aria-label="Close the analysis">×</button></div>
   <div class="d-body"><p class="summary"><b style="color:var(--x-net)">${SITE.stats.xNet}</b> internet-facing, <b style="color:var(--x-inter)">${SITE.stats.xInter}</b> exposed to other VLANs, <b>${SITE.stats.xIntra}</b> exposed inside their VLAN only.</p>
-  ${groups.map(g=>`<div class="hopgrp"><h4>${xtag(g.k)} ${plural(g.list.length,'asset')}</h4>${g.list.length?`<ul class="list">${g.list.map(a=>`<li class="reach"><button data-goto="${a.id}">${esc(a.name)}<small>${esc(a.role||'')} · VLAN ${esc(vnum(a))}</small><span class="chips">${a.ports.map(p=>`<span class="chip" style="border-color:var(${EXP[p.level].css})">${esc(p.port)}</span>`).join('')}</span></button>${tag(a.sev)}</li>`).join('')}</ul>`:'<p class="empty">None.</p>'}</div>`).join('')}
+  ${groups.map(g=>`<div class="hopgrp"><h4>${xtag(g.k)} ${plural(g.list.length,'asset')}</h4>${g.list.length?`<ul class="list">${g.list.map(a=>`<li class="reach"><button data-goto="${esc(a.id)}">${esc(a.name)}<small>${esc(a.role||'')} · VLAN ${esc(vnum(a))}</small><span class="chips">${a.ports.map(p=>`<span class="chip" style="border-color:var(${EXP[p.level].css})">${esc(p.port)}</span>`).join('')}</span></button>${tag(a.sev)}</li>`).join('')}</ul>`:'<p class="empty">None.</p>'}</div>`).join('')}
   </div>`,'ports');
 }
 function showPath(){
@@ -1101,14 +1101,14 @@ function showPath(){
   reach.forEach(a=>{(groups[EXPO[a.id]]=groups[EXPO[a.id]]||[]).push(a);});
   openDet(`<div class="d-head"><div><span class="cap">Analysis · IS ${esc(SITE.name)}</span><h2>Reachable from Internet</h2><p>Paths that follow the recorded flows, hop by hop</p></div><button class="close" data-close aria-label="Close the analysis">×</button></div>
   <div class="d-body"><p class="summary"><b>${reach.length}</b> assets can be reached from the Internet, <b style="color:var(--crit)">${critN}</b> of them with a critical vulnerability.</p>
-  ${reach.length?Object.keys(groups).map(h=>`<div class="hopgrp"><h4>${plural(+h,'hop')}</h4><ul class="list">${groups[h].map(a=>`<li class="reach"><button data-goto="${a.id}">${esc(a.name)}<small>${esc(a.role||'')} · VLAN ${esc(vnum(a))}</small></button>${tag(a.sev)}</li>`).join('')}</ul></div>`).join(''):'<p class="empty">No flow starts from the Internet. Add a flow with Internet as its source.</p>'}</div>`,'path');
+  ${reach.length?Object.keys(groups).map(h=>`<div class="hopgrp"><h4>${plural(+h,'hop')}</h4><ul class="list">${groups[h].map(a=>`<li class="reach"><button data-goto="${esc(a.id)}">${esc(a.name)}<small>${esc(a.role||'')} · VLAN ${esc(vnum(a))}</small></button>${tag(a.sev)}</li>`).join('')}</ul></div>`).join(''):'<p class="empty">No flow starts from the Internet. Add a flow with Internet as its source.</p>'}</div>`,'path');
 }
 function showSite(s){
   const links=WAN.filter(w=>w.a===s.id||w.b===s.id);
   const top=s.assets.filter(a=>a.sev==='crit'||a.sev==='high').sort((a,b)=>SEV[b.sev].rank-SEV[a.sev].rank||EXP[b.exp].rank-EXP[a.exp].rank||b.crit-a.crit).slice(0,5);
   openDet(`<div class="d-head"><div><span class="cap">${esc(s.kind||'Information system')}</span><h2>IS ${esc(s.name)}</h2><p>${plural(s.stats.vlans,'VLAN')} · ${plural(s.stats.assets,'asset')}</p></div><button class="close" data-close aria-label="Close the summary">×</button></div>
   <div class="d-body">
-  <div class="actions"><button class="btn small primary" data-open="${s.id}">Open the model</button><button class="btn small edit-only" data-edit-site="${s.id}">Edit</button><button class="btn small" data-export-site="${s.id}">Export this IS (JSON)</button></div>
+  <div class="actions"><button class="btn small primary" data-open="${esc(s.id)}">Open the model</button><button class="btn small edit-only" data-edit-site="${esc(s.id)}">Edit</button><button class="btn small" data-export-site="${esc(s.id)}">Export this IS (JSON)</button></div>
   <dl class="kv">
     <dt>Zones</dt><dd>${s.zones.map(z=>esc(z.name)).join(' · ')}</dd>
     <dt>Exposure</dt><dd><b style="color:var(--x-net)">${s.stats.xNet}</b> internet-facing · <b style="color:var(--x-inter)">${s.stats.xInter}</b> inter-VLAN · ${s.stats.xIntra} intra-VLAN</dd>
@@ -1119,15 +1119,15 @@ function showSite(s){
   <h3 class="cap">IS contacts</h3>${s.contacts.length?contactsHtml(s.contacts):'<p class="empty">No contact recorded.</p>'}
   <h3 class="cap">Watch list</h3>
   ${top.length?`<ul class="list">${top.map(a=>`<li class="reach"><span class="nm">${esc(a.name)}<small>${esc(a.role||'')} · VLAN ${esc(s.vlanById[a.vlan].num)} · ${EXP[a.exp].label}</small></span>${tag(a.sev)}</li>`).join('')}</ul>`:'<p class="empty">No critical or high vulnerability.</p>'}
-  <h3 class="cap"><span>Inter-IS links · ${links.length}</span><button class="ibtn edit-only" data-new-wan="${s.id}">+ Add</button></h3>
-  ${links.length?`<ul class="list">${links.map(w=>{const peer=siteById[w.a===s.id?w.b:w.a];return `<li class="flow${w.risk?' risk':''}"><button class="peer" data-site="${peer.id}">↔ ${esc(peer.name)}</button><span class="meta">${esc(w.tech)}</span><span class="meta">${w.vol} MB/h</span><button class="ibtn edit-only" data-edit-wan="${esc(w.id)}" aria-label="Edit this link">Edit</button>${w.note?`<span class="note">${esc(w.note)}</span>`:''}</li>`;}).join('')}</ul>`:'<p class="empty">No link to another IS.</p>'}
+  <h3 class="cap"><span>Inter-IS links · ${links.length}</span><button class="ibtn edit-only" data-new-wan="${esc(s.id)}">+ Add</button></h3>
+  ${links.length?`<ul class="list">${links.map(w=>{const peer=siteById[w.a===s.id?w.b:w.a];return `<li class="flow${w.risk?' risk':''}"><button class="peer" data-site="${esc(peer.id)}">↔ ${esc(peer.name)}</button><span class="meta">${esc(w.tech)}</span><span class="meta">${esc(w.vol)} MB/h</span><button class="ibtn edit-only" data-edit-wan="${esc(w.id)}" aria-label="Edit this link">Edit</button>${w.note?`<span class="note">${esc(w.note)}</span>`:''}</li>`;}).join('')}</ul>`:'<p class="empty">No link to another IS.</p>'}
   </div>`,'site');
 }
 
 /* ================= Forms ================= */
 let onSave=null,onCancel=null;
-const fIn=(id,label,val,attrs='',hint='')=>`<div class="f"><label for="${id}">${label}</label><input id="${id}" value="${esc(val)}" ${attrs}>${hint?`<span class="hint">${hint}</span>`:''}</div>`;
-const fSel=(id,label,opts,val)=>`<div class="f"><label for="${id}">${label}</label><select id="${id}">${opts.map(o=>o.group?`<optgroup label="${esc(o.group)}">${o.items.map(([v,t])=>`<option value="${esc(v)}"${String(v)===String(val)?' selected':''}>${esc(t)}</option>`).join('')}</optgroup>`:`<option value="${esc(o[0])}"${String(o[0])===String(val)?' selected':''}>${esc(o[1])}</option>`).join('')}</select></div>`;
+const fIn=(id,label,val,attrs='',hint='')=>`<div class="f"><label for="${esc(id)}">${label}</label><input id="${esc(id)}" value="${esc(val)}" ${attrs}>${hint?`<span class="hint">${hint}</span>`:''}</div>`;
+const fSel=(id,label,opts,val)=>`<div class="f"><label for="${esc(id)}">${label}</label><select id="${esc(id)}">${opts.map(o=>o.group?`<optgroup label="${esc(o.group)}">${o.items.map(([v,t])=>`<option value="${esc(v)}"${String(v)===String(val)?' selected':''}>${esc(t)}</option>`).join('')}</optgroup>`:`<option value="${esc(o[0])}"${String(o[0])===String(val)?' selected':''}>${esc(o[1])}</option>`).join('')}</select></div>`;
 const roleOpts=v=>CONTACT_ROLES.map(r=>`<option${r===v?' selected':''}>${esc(r)}</option>`).join('');
 const REP={
   contact:(c={})=>`<div class="rep" data-rep="contact"><div class="rep-grid">
@@ -1414,10 +1414,10 @@ async function act(name){
 const armed={};
 function confirmArm(key){
   const btns=document.querySelectorAll(`[data-act="${key}"]`);
-  if(armed[key]){armed[key]=false;btns.forEach(b=>{b.classList.remove('armed');if(key!=='wipe')b.classList.remove('danger');b.innerHTML=b.dataset.label;});return true;}
+  if(armed[key]){armed[key]=false;btns.forEach(b=>{b.classList.remove('armed');if(key!=='wipe')b.classList.remove('danger');b.replaceChildren(...(b._label||[]));});return true;}
   armed[key]=true;
-  btns.forEach(b=>{b.dataset.label=b.innerHTML;b.classList.add('armed','danger');b.textContent=key==='wipe'?'Confirm: delete everything':'Confirm: replace with the demo';});
-  setTimeout(()=>{if(armed[key]){armed[key]=false;btns.forEach(b=>{b.classList.remove('armed');if(key!=='wipe')b.classList.remove('danger');b.innerHTML=b.dataset.label;});}},5000);
+  btns.forEach(b=>{b._label=[...b.childNodes].map(n=>n.cloneNode(true));b.classList.add('armed','danger');b.textContent=key==='wipe'?'Confirm: delete everything':'Confirm: replace with the demo';});
+  setTimeout(()=>{if(armed[key]){armed[key]=false;btns.forEach(b=>{b.classList.remove('armed');if(key!=='wipe')b.classList.remove('danger');b.replaceChildren(...(b._label||[]));});}},5000);
   return false;
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.closest('#det'))act(b.dataset.act);});
@@ -1447,8 +1447,17 @@ $('#io').addEventListener('change',e=>{
 
 /* ================= Files for documentation ================= */
 // Saves a file on the user's computer
-async function saveFile(name,mime,data){
-  const blob=data instanceof Blob?data:new Blob([data],{type:mime});
+// Saves a file on the user's computer.
+// Text files (JSON, CSV, SVG) go out as a percent-encoded data: URL; it only feeds an <a download>,
+// so the browser saves the file and never renders it as a page.
+async function saveFile(name,mime,text){
+  const a=document.createElement('a');
+  a.href='data:'+String(mime).replace(/[^\w/+.;=-]/g,'')+','+encodeURIComponent(String(text));
+  a.download=name;document.body.appendChild(a);a.click();a.remove();
+  toast(`${name} downloaded.`);
+}
+// Binary files drawn by the app itself (PNG plans)
+async function saveBlob(name,blob){
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),2000);
@@ -1674,7 +1683,7 @@ async function planPng(){
     await new Promise((ok,ko)=>{img.onload=ok;img.onerror=ko;img.src=url;});
     const k=2,c=document.createElement('canvas');c.width=PLAN.w*k;c.height=PLAN.h*k;const x=c.getContext('2d');x.scale(k,k);x.drawImage(img,0,0);
     const blob=await new Promise(r=>c.toBlob(r,'image/png'));
-    await saveFile(`architecture-plan_${fileStem(PLAN.asset.name)}_${today()}.png`,'image/png',blob);
+    await saveBlob(`architecture-plan_${fileStem(PLAN.asset.name)}_${today()}.png`,blob);
   }catch(e){toast('Could not produce the PNG. Download the SVG instead.',true);}
   finally{URL.revokeObjectURL(url);}
 }
@@ -2283,7 +2292,7 @@ async function showConnectors(){
   const C=CONN;
   const card=c=>{
     const live=c.id!=='paloalto'||c.settings.url;
-    return `<li class="conn" data-conn="${c.id}"><div class="c1"><span class="cico mono">${CONN_ICON[c.id]}</span><div><b>${esc(c.name)}</b><small>${esc(c.what)}</small></div>${C.canRun?connStatus(c):''}</div>
+    return `<li class="conn" data-conn="${esc(c.id)}"><div class="c1"><span class="cico mono">${CONN_ICON[c.id]}</span><div><b>${esc(c.name)}</b><small>${esc(c.what)}</small></div>${C.canRun?connStatus(c):''}</div>
     ${C.canRun?connRun(c.lastRun):''}
     <div class="c2">
       ${C.canRun&&c.configured&&live?`<button class="btn small primary" data-conn-run ${c.running?'disabled':''}>${c.running?'Running…':'Sync now'}</button><button class="ibtn" data-conn-test>Test the connection</button>`:''}
@@ -2305,15 +2314,15 @@ function connectorForm(c){
     return [['','None (direct)'],{group:'Firewalls, routers, gateways',items:fw.map(a=>[a.id,`${a.name} · ${a.ip||''}`])},{group:'Other assets',items:rest.map(a=>[a.id,a.name])}];};
   const field=f=>{
     const id='cf_'+f.k,v=S[f.k],hint=f.help?`<span class="hint">${esc(f.help)}</span>`:'';
-    if(f.type==='bool')return `<label class="chk plain"><input type="checkbox" id="${id}" data-ck="${f.k}"${v?' checked':''}> ${esc(f.label)}</label>${hint}`;
+    if(f.type==='bool')return `<label class="chk plain"><input type="checkbox" id="${esc(id)}" data-ck="${esc(f.k)}"${v?' checked':''}> ${esc(f.label)}</label>${hint}`;
     if(f.type==='select')return fSel(id,esc(f.label),f.options,v||f.default).replace('<select ','<select data-ck="'+f.k+'" ');
     if(f.type==='site')return fSel(id,esc(f.label)+(f.required?' *':''),[['','Choose…'],...siteOpts],v).replace('<select ','<select data-ck="'+f.k+'" ');
-    if(f.type==='asset')return `<div data-asset-wrap="${f.k}">${fSel(id,esc(f.label),assetOpts(S.site||state.siteId),v).replace('<select ','<select data-ck="'+f.k+'" ')}${hint}</div>`;
+    if(f.type==='asset')return `<div data-asset-wrap="${esc(f.k)}">${fSel(id,esc(f.label),assetOpts(S.site||state.siteId),v).replace('<select ','<select data-ck="'+f.k+'" ')}${hint}</div>`;
     if(f.type==='multi'||f.type==='sites'){const opts=f.type==='sites'?siteOpts:f.options,cur=Array.isArray(v)?v:[];
-      return `<fieldset data-multi="${f.k}"><legend>${esc(f.label)}</legend>${opts.map(([k,t])=>`<label class="chk plain"><input type="checkbox" value="${esc(k)}"${cur.includes(k)?' checked':''}> ${esc(t)}</label>`).join('')}${hint}</fieldset>`;}
-    if(f.type==='rules'||f.type==='text')return `<div class="f"><label for="${id}">${esc(f.label)}</label><textarea id="${id}" data-ck="${f.k}" class="mono" spellcheck="false" placeholder="${esc(f.placeholder||'')}">${esc(v||'')}</textarea>${hint}</div>`;
-    if(f.secret)return fIn(id,esc(f.label)+(f.required?' *':''),'',`type="password" autocomplete="new-password" data-ck="${f.k}" data-secret="${v?1:0}" placeholder="${v?'Saved: leave empty to keep it':esc(f.placeholder||'')}"`,f.help?esc(f.help):'')+(v?`<label class="chk plain small"><input type="checkbox" data-clear="${f.k}"> Forget the saved value</label>`:'');
-    return fIn(id,esc(f.label)+(f.required?' *':''),v==null?'':v,`data-ck="${f.k}" ${f.type==='number'?'type="number" min="0" step="1"':''} placeholder="${esc(f.placeholder||'')}" autocomplete="off"`,f.help?esc(f.help):'');
+      return `<fieldset data-multi="${esc(f.k)}"><legend>${esc(f.label)}</legend>${opts.map(([k,t])=>`<label class="chk plain"><input type="checkbox" value="${esc(k)}"${cur.includes(k)?' checked':''}> ${esc(t)}</label>`).join('')}${hint}</fieldset>`;}
+    if(f.type==='rules'||f.type==='text')return `<div class="f"><label for="${esc(id)}">${esc(f.label)}</label><textarea id="${esc(id)}" data-ck="${esc(f.k)}" class="mono" spellcheck="false" placeholder="${esc(f.placeholder||'')}">${esc(v||'')}</textarea>${hint}</div>`;
+    if(f.secret)return fIn(id,esc(f.label)+(f.required?' *':''),'',`type="password" autocomplete="new-password" data-ck="${esc(f.k)}" data-secret="${v?1:0}" placeholder="${v?'Saved: leave empty to keep it':esc(f.placeholder||'')}"`,f.help?esc(f.help):'')+(v?`<label class="chk plain small"><input type="checkbox" data-clear="${esc(f.k)}"> Forget the saved value</label>`:'');
+    return fIn(id,esc(f.label)+(f.required?' *':''),v==null?'':v,`data-ck="${esc(f.k)}" ${f.type==='number'?'type="number" min="0" step="1"':''} placeholder="${esc(f.placeholder||'')}" autocomplete="off"`,f.help?esc(f.help):'');
   };
   const main=c.fields.filter(f=>!f.advanced),adv=c.fields.filter(f=>f.advanced);
   openForm(`${c.name} settings`,'Connector',`<p class="fhint" style="margin:0">${esc(c.what)}. Each run prepares one proposal per IS; an approver reviews it.</p>

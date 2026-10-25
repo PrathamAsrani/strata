@@ -9,6 +9,7 @@ All notable changes to Strata (formerly IS Map 3D). Versions follow [Semantic Ve
 - Published under the GNU AGPL v3, with a *Source code* link in the app (`SOURCE_URL`).
 ### Fixed
 - `docker-compose.yml` was empty in 0.5.1.
+- Code scanning alerts (CodeQL): inter-IS link values escaped in the IS sheet, text exports saved as data: URLs, PAN-OS error messages stripped of any markup.
 
 ## [0.5.1] - 2026-10-24
 ### Changed

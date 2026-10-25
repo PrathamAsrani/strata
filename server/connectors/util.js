@@ -199,4 +199,11 @@ export function path(el, ...names) {
   return cur;
 }
 export const txt = el => (el ? el.text.trim() : '');
+// Plain text from a fragment of markup (PAN-OS error messages): tags removed until none is left, then any
+// stray angle bracket, so nothing that looks like markup survives into a message
+export function stripTags(s) {
+  let out = String(s ?? ''), prev;
+  do { prev = out; out = out.replace(/<[^<>]*>/g, ' '); } while (out !== prev);
+  return out.replace(/[<>]/g, ' ').replace(/\s+/g, ' ').trim();
+}
 export const members = el => (el ? kids(el, 'member').map(txt).filter(Boolean) : []);
