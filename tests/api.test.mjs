@@ -183,8 +183,12 @@ test('import: replaces the map, validates ids, and enforces MAX_IMPORT_MB', asyn
   const bob = as('bob');
   assert.equal((await bob.post('/api/import', { si: { 'bad id!': {} }, assets: {} })).status, 400);
   const big = { si: { x: { name: 'x'.repeat(1.2 * 1024 * 1024) } }, assets: {} };
-  const tooBig = await bob.post('/api/import', big).catch(e => ({ status: 'connection closed', error: e }));
-  assert.ok(tooBig.status === 413 || tooBig.status === 'connection closed', `got ${tooBig.status}`);
+  // the server answers 413 with its usual JSON error, instead of cutting the connection
+  const tooBig = await bob.post('/api/import', big);
+  assert.equal(tooBig.status, 413);
+  assert.deepEqual(tooBig.data, { error: 'Payload too large' });
+  // and keeps working for the next request
+  assert.equal((await bob.get('/api/state')).status, 200);
   const before = await rev();
   const r = await bob.post('/api/import', { si: { lille: { name: 'Lille' } }, assets: {} });
   assert.equal(r.status, 200, JSON.stringify(r.data));
@@ -265,4 +269,50 @@ test('reserved keys: the users.mjs command line refuses them too', async () => {
     for (const cmd of ['role', 'disable', 'delete']) assert.match(run(cmd, 'toString', 'admin').out, /No account named toString/, cmd);
     assert.match(run('list').out, /^alice\s+viewer/m);
   } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+// Server-Sent Events from /api/events: each block between two blank lines is one event; comments
+// (": ping") are skipped
+async function openEvents(user) {
+  const ctrl = new AbortController();
+  const res = await fetch(base + '/api/events', { headers: user ? { Authorization: as(user).auth } : {}, signal: ctrl.signal });
+  if (res.status !== 200) { await res.body.cancel(); return { status: res.status }; }
+  const reader = res.body.getReader(), dec = new TextDecoder();
+  let buf = '';
+  const next = async () => {
+    for (;;) {
+      const i = buf.indexOf('\n\n');
+      if (i >= 0) {
+        const block = buf.slice(0, i); buf = buf.slice(i + 2);
+        const ev = {};
+        for (const line of block.split('\n')) { const m = /^(event|data): ?(.*)$/.exec(line); if (m) ev[m[1]] = m[2]; }
+        if (ev.event) return { event: ev.event, data: JSON.parse(ev.data) };
+        continue;
+      }
+      const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('no event within 5 s')), 5000));
+      const { value, done } = await Promise.race([reader.read(), timeout]);
+      if (done) throw new Error('the stream ended');
+      buf += dec.decode(value, { stream: true });
+    }
+  };
+  // the next event of this kind (others may come in between)
+  const until = async name => { for (;;) { const e = await next(); if (e.event === name) return e; } };
+  return { status: 200, next, until, close: () => { reader.cancel().catch(() => {}); ctrl.abort(); } };
+}
+
+test('live updates: /api/events streams the revision on every change, and proposals', async () => {
+  assert.equal((await openEvents(null)).status, 401);
+  const ev = await openEvents('bob');
+  try {
+    assert.equal(ev.status, 200);
+    const first = await ev.next();
+    assert.deepEqual(first, { event: 'change', data: { rev: await rev() } });
+    // a write by an approver: a change event with the next revision
+    assert.equal((await as('bob').put('/api/si/sse-test', { name: 'Live updates' })).status, 200);
+    assert.deepEqual((await ev.until('change')).data, { rev: first.data.rev + 1 });
+    // a new proposal: a proposals event
+    assert.equal((await as('alice').post('/api/proposals', { title: 'Watched live' })).status, 200);
+    const p = await ev.until('proposals');
+    assert.equal(typeof p.data.at, 'number');
+  } finally { ev.close(); }
 });
