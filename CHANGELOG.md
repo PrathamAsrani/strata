@@ -4,6 +4,8 @@ All notable changes to Strata (formerly IS Map 3D). Versions follow [Semantic Ve
 
 ## [Unreleased]
 ### Added
+- **Browser walk-through test** ([#15](https://github.com/SolidGeeks/strata/issues/15)): `npm run test:e2e` (Playwright, Chromium) signs in, loads the demo, checks that the 3D view draws a real picture and that the 2D diagram shows the demo IS, then takes a proposal from a contributor's draft to an approver who sees it highlighted and approves it. Any JavaScript error in a page fails it. It runs in CI (`e2e` job).
+- **Failed sign-ins are limited** ([#13](https://github.com/SolidGeeks/strata/issues/13)): after `LOGIN_MAX_FAILS` (10) different wrong passwords for one account, or `LOGIN_MAX_FAILS_PER_ADDRESS` (20) from one client address, sign-ins are refused with `429` and `Retry-After` for `LOGIN_LOCK_MINUTES` (15). The same wrong password sent again (a tab left open with an old password) counts once, and browsers already signed in keep working from their address. `TRUST_PROXY` says which reverse proxies' `X-Forwarded-For` to believe.
 - **Nix and NixOS**: the repository is a flake. `nix run github:SolidGeeks/strata` runs the server; `nixosModules.default` provides `services.strata`, a hardened systemd service (its own user, data in `/var/lib/strata`, read-only system, no capabilities, restricted system calls) with `settings`, `secretFiles`, `environmentFile` and `openFirewall`. A `Nix` workflow builds the package, which runs the tests, and runs a NixOS VM test of the module.
 - `EDIT_PASS_FILE` and `VIEW_PASS_FILE` read the passwords from files (Docker secrets, systemd credentials, sops-nix, agenix); `NEW_PASSWORD_FILE` likewise for `scripts/users.mjs`. An unreadable file stops the server instead of starting it without a password.
 - README: how to build from source without Docker, step by step.
@@ -12,6 +14,9 @@ All notable changes to Strata (formerly IS Map 3D). Versions follow [Semantic Ve
 - **Blast radius**: pick any asset as the attacker's starting point (in the panel, or *Blast radius* on the asset sheet) and see everything reachable from it, the most likely way to each asset, and the business services hit. The asset sheet gives its size.
 - Both export as CSV.
 - **Architecture file**: one document per IS, from *Analysis › Architecture file* or the IS summary, in the order audits and security accreditation files follow: cover with classification, document control and sign-off table, summary (key figures, fixes first, critical assets reachable), scope (business services, links to other IS, Internet services), architecture (the 2D diagram, zones and VLANs, interconnection equipment, applications), asset inventory, flow matrix and the rules each firewall needs (with the flows between VLANs that cross no firewall), exposure, vulnerabilities and remediation order, attack paths and where to cut, plans of the internet-facing and critical assets, incident contacts, change history of the IS (self-hosted version), method and limits. Shown in the app and downloaded as a standalone HTML file that prints to A4 PDF.
+
+### Changed
+- Security review ([#14](https://github.com/SolidGeeks/strata/issues/14)), hardening: `Cross-Origin-Opener-Policy` and `Cross-Origin-Resource-Policy: same-origin` on every response; a path with a malformed percent-encoding gets `400` instead of an internal error; the current password is compared in constant time when it is changed.
 
 ## [0.6.0] - 2026-10-26
 ### Added
