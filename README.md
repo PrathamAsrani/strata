@@ -15,7 +15,7 @@ Strata is on its way to **1.0.0**: from then on, the API, the export format, the
 | Milestone | What it brings |
 |---|---|
 | [0.7.0](https://github.com/SolidGeeks/strata/milestone/1) ✅ | Hardening and tests: limit failed sign-ins, a security review, a browser test of the interface. Released on 2026-10-26 |
-| [0.8.0](https://github.com/SolidGeeks/strata/milestone/2) | Connector modules and a module store (done, unreleased); a modern three.js, or a documented decision to stay on 0.128 |
+| [0.8.0](https://github.com/SolidGeeks/strata/milestone/2) | Connector modules and a module store, three.js 0.186 (done, unreleased) |
 | [0.9.0](https://github.com/SolidGeeks/strata/milestone/3) | The last breaking changes: IS Map compatibility, pre-releases, an API reference |
 | [1.0.0](https://github.com/SolidGeeks/strata/milestone/4) | Release candidates (`1.0.0-rc.N`), then 1.0.0 |
 
@@ -25,7 +25,7 @@ Follow it on the [milestones page](https://github.com/SolidGeeks/strata/mileston
 
 Connectors are now **modules**: a folder with a manifest (`strata-module.json`: name, settings, what it may reach) and its code. The four connectors that ship with Strata are modules like any other, and anyone can write a new one without touching Strata's code: see **[MODULES.md](MODULES.md)**.
 
-- **Module store** (*Collaboration › Connectors › Module store*, administrators): the modules a registry offers, with what each one reads, installed in one click. The store pins the SHA-256 of each package, so what gets installed is exactly what was reviewed. The first one is **CSV inventory**: assets of an IS from a spreadsheet saved as CSV, imported by any contributor as a proposal.
+- **Module store** (*Collaboration › Connectors › Module store*, administrators): the modules a registry offers, with what each one reads, installed in one click. The store pins the SHA-256 of each package, so what gets installed is exactly what was reviewed. Three modules to start with: **CSV inventory** (assets of an IS from a spreadsheet), **Nmap scan** (hosts, systems and open ports from `nmap -oX`), both imported by any contributor as a proposal, and **NetBox** (devices, virtual machines, VLANs and prefixes, synced with a read-only token).
 - **Each module runs in its own process**, started for one test or run: it reads its own folder only (not the data files, not the accounts, not the other connectors' settings), cannot write files or start programs, sees none of the server's variables, and is stopped after `CONNECTOR_TIMEOUT_MINUTES`. Whatever it reads still arrives as a proposal an approver reviews.
 - **File imports for any module**: a module says it imports files, which settings can change for one import, and who may do it. The Palo Alto import is now one of them.
 - **Modules of your own**: a folder in `MODULES_DIR` (a Docker volume, or `services.strata.modules` on NixOS), or a package file when `MODULE_UPLOAD=true`. `scripts/pack-module.mjs` packs a module for the store.
@@ -164,9 +164,9 @@ One of these two options:
 - **Node.js 20 or later** (`node --version`);
 - or **Nix** with flakes, or **NixOS** (section 5, *Nix and NixOS*).
 
-The machine needs access to the npm registry **once**, during the build, to download three.js 0.128 and the fonts. After that, the app runs without Internet access.
+The machine needs access to the npm registry **once**, during the build, to download three.js and the fonts. After that, the app runs without Internet access.
 
-Users need a recent browser with WebGL (recent Chrome, Edge, Firefox or Safari).
+Users need a browser with WebGL 2 and JavaScript modules: Chrome or Edge 80 and later, Firefox 114 and later, Safari 15 and later (three.js has needed WebGL 2 since 2024).
 
 ---
 
@@ -316,7 +316,7 @@ What the Dockerfile does, step by step, for packagers and other platforms:
 
 | Step | Command | Needs |
 |---|---|---|
-| Install the dependencies | `npm ci` | Node.js 20 or later, npm, the npm registry (`package-lock.json` pins every package: three.js 0.128 and the Archivo and IBM Plex Mono fonts) |
+| Install the dependencies | `npm ci` | Node.js 20 or later, npm, the npm registry (`package-lock.json` pins every package: three.js 0.186 and the Archivo and IBM Plex Mono fonts) |
 | Copy them into the app | `npm run vendor` (`scripts/vendor.mjs`) | writes `public/vendor/` |
 | Test | `npm test` | starts the server on `127.0.0.1` |
 | Run | `node server/server.js` | Node.js only: no npm package at run time, nothing downloaded, no write outside `DATA_DIR` |
@@ -518,7 +518,7 @@ This map describes your weak spots precisely: treat it as sensitive data.
 - The connectors were written from the public API documentation (Cyberwatch v3, GLPI `apirest.php` 9.5/10, phpIPAM 1.4+, PAN-OS 10/11) and tested against simulators, not against your instances: run *Test the connection*, then a first sync, and review the proposal before publishing it. Fields specific to your version (Cyberwatch path, location rules) can be set without touching the code.
 - Palo Alto: NAT rules, security profiles, dynamic address groups and the Panorama device-group hierarchy are not interpreted; only *allow* security rules are. A rule that is too broad (internal `any`, large range) is flagged instead of drawn.
 - GLPI: one call per asset (plus one per technician and per unknown software, cached); allow a few minutes for several thousand assets. The new GLPI 11 API (`/api.php/v2`) is not supported yet.
-- NetBox and NetFlow are not connected yet: a module could do it ([MODULES.md](MODULES.md)).
+- NetFlow is not read yet: a module could do it ([MODULES.md](MODULES.md)). NetBox and Nmap come as modules from the store.
 - A connector module's process is kept away from the data files and from the server's settings, but not from the network; the Node.js permission model it relies on guards against mistakes, not against code written to escape it. Review a module before installing it outside the store.
 - Business dependencies follow the recorded flows: a dependency with no flow on the map (a licence server reached through a proxy, a shared storage mounted by hand) is not seen. Log and monitoring flows (syslog, SNMP traps, NetFlow) are left out on purpose.
 - Attack paths follow the recorded flows only: a flow missing from the map is a path Strata does not see, and a flow recorded but blocked in practice is a path it shows. The likelihoods are a way to rank paths, not a measured probability. Paths below 0.1% or longer than 8 steps are left out of the lists (the most likely way to each asset is always given).
