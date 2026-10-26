@@ -27,7 +27,7 @@ const CONFIG = {
   backupKeep: Math.max(0, parseInt(env.BACKUP_KEEP || '14', 10)),
   backupEveryHours: Math.max(1, parseInt(env.BACKUP_EVERY_HOURS || '24', 10)),
   historyKeep: Math.max(50, parseInt(env.HISTORY_KEEP || '5000', 10)),
-  maxImportBytes: parseInt(env.MAX_IMPORT_MB || '20', 10) * 1024 * 1024,
+  maxImportBytes: Math.max(1, parseInt(env.MAX_IMPORT_MB, 10) || 20) * 1024 * 1024,
   maxDocBytes: 512 * 1024,
   // AGPL-3.0 section 13: users of a modified version must be offered its source. Point this at your fork.
   sourceUrl: /^https?:\/\//.test(env.SOURCE_URL || '') ? env.SOURCE_URL : 'https://github.com/SolidGeeks/strata',
@@ -296,8 +296,17 @@ function send(res, status, body, headers = {}) {
 const fail = (res, status, error, extra) => send(res, status, { error, ...(extra || {}) });
 function readBody(req, limit) {
   return new Promise((resolve, reject) => {
+    const tooLarge = () => { req.resume(); reject(httpError(413, 'Payload too large')); };
+    if (Number(req.headers['content-length']) > limit) return tooLarge();
     let size = 0; const chunks = [];
-    req.on('data', c => { size += c.length; if (size > limit) { reject(httpError(413, 'Payload too large')); req.destroy(); return; } chunks.push(c); });
+    const onData = c => {
+      size += c.length;
+      if (size <= limit) return chunks.push(c);
+      req.off('data', onData);
+      chunks.length = 0;
+      tooLarge();
+    };
+    req.on('data', onData);
     req.on('end', () => { try { resolve(chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : null); } catch { reject(httpError(400, 'Invalid JSON')); } });
     req.on('error', reject);
   });
@@ -571,7 +580,10 @@ const server = http.createServer(async (req, res) => {
     else if (req.method === 'GET' || req.method === 'HEAD') await serveStatic(req, res, url.pathname);
     else fail(res, 405, 'Method not allowed');
   } catch (err) {
-    if (!res.headersSent) fail(res, err.status || 500, err.status ? err.message : 'Internal error', err.extra);
+    if (!res.headersSent) {
+      if (err.status === 413) res.setHeader('Connection', 'close');
+      fail(res, err.status || 500, err.status ? err.message : 'Internal error', err.extra);
+    }
     if (!err.status) log('ERROR', req.method, req.url, err.stack || err.message);
   }
 });

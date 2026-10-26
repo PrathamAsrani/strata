@@ -176,8 +176,9 @@ test('import: replaces the map, validates ids, and enforces MAX_IMPORT_MB', asyn
   const bob = as('bob');
   assert.equal((await bob.post('/api/import', { si: { 'bad id!': {} }, assets: {} })).status, 400);
   const big = { si: { x: { name: 'x'.repeat(1.2 * 1024 * 1024) } }, assets: {} };
-  const tooBig = await bob.post('/api/import', big).catch(e => ({ status: 'connection closed', error: e }));
-  assert.ok(tooBig.status === 413 || tooBig.status === 'connection closed', `got ${tooBig.status}`);
+  const tooBig = await bob.post('/api/import', big);
+  assert.equal(tooBig.status, 413);
+  assert.deepEqual(tooBig.data, { error: 'Payload too large' });
   const before = await rev();
   const r = await bob.post('/api/import', { si: { lille: { name: 'Lille' } }, assets: {} });
   assert.equal(r.status, 200, JSON.stringify(r.data));
@@ -187,6 +188,32 @@ test('import: replaces the map, validates ids, and enforces MAX_IMPORT_MB', asyn
   const exp = await bob.get('/api/export');
   assert.equal(exp.data.format, 'strata');
   assert.match(exp.headers.get('content-disposition'), /strata-\d{4}-\d{2}-\d{2}\.json/);
+});
+
+test('request bodies: oversized ones get a 413 whether announced or streamed, and the server keeps serving', async () => {
+  const bob = as('bob');
+  const rawPost = (path, { body = '', headers = {}, end = true }) => new Promise((res, rej) => {
+    const req = request({
+      host: '127.0.0.1', port, path, method: 'POST',
+      headers: { Authorization: bob.auth, 'Content-Type': 'application/json', 'X-Requested-With': 'strata', ...headers },
+    }, r => { let b = ''; r.on('data', c => (b += c)); r.on('end', () => { req.destroy(); res({ status: r.statusCode, connection: r.headers.connection, data: JSON.parse(b) }); }); });
+    req.on('error', rej);
+    req.write(body);
+    if (end) req.end();
+  });
+
+  const announced = await rawPost('/api/import', { headers: { 'Content-Length': 2 * 1024 * 1024 }, body: '{', end: false });
+  assert.equal(announced.status, 413, 'rejected from the Content-Length header without waiting for the body');
+  assert.equal(announced.connection, 'close');
+  assert.deepEqual(announced.data, { error: 'Payload too large' });
+
+  const streamed = await rawPost('/api/import', { body: JSON.stringify({ si: { x: { name: 'x'.repeat(1.2 * 1024 * 1024) } } }) });
+  assert.equal(streamed.status, 413, 'chunked bodies without a Content-Length are counted too');
+  assert.deepEqual(streamed.data, { error: 'Payload too large' });
+
+  assert.equal((await bob.put('/api/me/password', { password: 'x'.repeat(8 * 1024) })).status, 413, 'small per-route limits apply');
+  assert.deepEqual((await rawPost('/api/import', { body: '{"si":' })).data, { error: 'Invalid JSON' });
+  assert.equal((await bob.get('/api/state')).status, 200);
 });
 
 test('static files: path traversal cannot reach the server code', async () => {
