@@ -176,7 +176,9 @@ test('import: replaces the map, validates ids, and enforces MAX_IMPORT_MB', asyn
   const bob = as('bob');
   assert.equal((await bob.post('/api/import', { si: { 'bad id!': {} }, assets: {} })).status, 400);
   const big = { si: { x: { name: 'x'.repeat(1.2 * 1024 * 1024) } }, assets: {} };
-  const tooBig = await bob.post('/api/import', big).catch(e => ({ status: 'connection closed', error: e }));
+  const tooBig = await bob.post('/api/import', big);
+  assert.equal(tooBig.status, 413);
+  assert.deepEqual(tooBig.data, { error: 'Payload too large' });
   assert.ok(tooBig.status === 413 || tooBig.status === 'connection closed', `got ${tooBig.status}`);
   const before = await rev();
   const r = await bob.post('/api/import', { si: { lille: { name: 'Lille' } }, assets: {} });
